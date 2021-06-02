@@ -106,6 +106,7 @@ class FilesController {
     if (!page) page = 0;
 
     if (!parentId) {
+      // Still need to test this pagination with > 20 items and page > 0
       const folderArray = await files.aggregate([
         { $match: { userId: ObjectID(userId) } },
         { $skip: page * 20 },
@@ -122,6 +123,7 @@ class FilesController {
       }));
       return response.json(mappedFolderArray);
     }
+    // Still need to test this pagination with > 20 items and page > 0
     const folderArray = await files.aggregate([
       { $match: { parentId: ObjectID(parentId) } },
       { $skip: page * 20 },
@@ -137,6 +139,52 @@ class FilesController {
       parentId: file.parentId,
     }));
     return response.json(mappedFolderArray);
+  }
+
+  static async putPublish(request, response) {
+    const files = dbClient.db.collection('files');
+    const token = request.headers['x-token'];
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    if (userId === null) return response.status(401).json({ error: 'Unauthorized' });
+
+    const fileId = request.params.id;
+    const fileArray = await files.find(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    ).toArray();
+    if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
+
+    const file = fileArray[0];
+    file.isPublic = true;
+    files.save(file);
+
+    const returnObj = { id: file._id, ...file };
+    delete returnObj._id;
+    delete returnObj.localPath;
+    return response.json(returnObj);
+  }
+
+  static async putUnpublish(request, response) {
+    const files = dbClient.db.collection('files');
+    const token = request.headers['x-token'];
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    if (userId === null) response.status(401).json({ error: 'Unauthorized' });
+
+    const fileId = request.params.id;
+    const fileArray = await files.find(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    ).toArray();
+    if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
+
+    const file = fileArray[0];
+    file.isPublic = false;
+    files.save(file);
+
+    const returnObj = { id: file._id, ...file };
+    delete returnObj._id;
+    delete returnObj.localPath;
+    return response.json(returnObj);
   }
 }
 
