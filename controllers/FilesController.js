@@ -1,4 +1,6 @@
 const { ObjectID } = require('mongodb');
+const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
@@ -27,28 +29,43 @@ class FilesController {
     }
     if (!parentId) parentId = 0;
     else {
-      // Does the new ObjectID syntax work?
-      const parentFileArray = await files.find({ parentId: ObjectID(parentId) }).toArray();
-      if (parentFileArray.length === 0) response.status(400).json({ error: 'Parent not found' });
+      const parentFileArray = await files.find({ _id: ObjectID(parentId) }).toArray();
+      if (parentFileArray.length === 0) return response.status(400).json({ error: 'Parent not found' });
 
       const file = parentFileArray[0];
-      if (file.type !== 'folder') response.status(400).json({ error: 'Parent is not a folder' });
+      if (file.type !== 'folder') return response.status(400).json({ error: 'Parent is not a folder' });
     }
     if (!isPublic) isPublic = false;
     if (!data && type !== 'folder') {
       response.statusCode = 400;
       response.json({ error: 'Missing data' });
     }
-    if (type === 'folder') {
+    if (type !== 'folder') {
+      const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
+      if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
+
+      const fileNameUUID = uuidv4();
+      const localPath = `${folderPath}/${fileNameUUID}`;
+      const clearData = Buffer.from(data, 'base64').toString();
+      await fs.promises.writeFile(localPath, clearData, { flag: 'w+' });
       const resultObj = await files.insertOne({
-        userId: ObjectID(userId), name, type, isPublic, parentId,
+        userId: ObjectID(userId),
+        name,
+        type,
+        isPublic,
+        parentId: parentId === 0 ? parentId : ObjectID(parentId),
+        localPath,
       });
       response.json({
-        id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
+        id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId, localPath,
       });
     } else {
       const resultObj = await files.insertOne({
-        userId: ObjectID(userId), name, type, isPublic, parentId,
+        userId: ObjectID(userId),
+        name,
+        type,
+        isPublic,
+        parentId: parentId === 0 ? parentId : ObjectID(parentId),
       });
       response.json({
         id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
