@@ -1,6 +1,7 @@
 const { ObjectID } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const mime = require('mime-types');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
@@ -149,14 +150,19 @@ class FilesController {
     if (userId === null) return response.status(401).json({ error: 'Unauthorized' });
 
     const fileId = request.params.id;
-    const fileArray = await files.find(
+    let fileArray = await files.find(
       { userId: ObjectID(userId), _id: ObjectID(fileId) },
     ).toArray();
     if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
 
+    await files.updateOne(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+      { $set: { isPublic: true } },
+    );
+    fileArray = await files.find(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    ).toArray();
     const file = fileArray[0];
-    file.isPublic = true;
-    files.save(file);
 
     const returnObj = { id: file._id, ...file };
     delete returnObj._id;
@@ -172,19 +178,45 @@ class FilesController {
     if (userId === null) response.status(401).json({ error: 'Unauthorized' });
 
     const fileId = request.params.id;
-    const fileArray = await files.find(
+    let fileArray = await files.find(
       { userId: ObjectID(userId), _id: ObjectID(fileId) },
     ).toArray();
     if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
 
+    await files.updateOne(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+      { $set: { isPublic: false } },
+    );
+    fileArray = await files.find(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    ).toArray();
     const file = fileArray[0];
-    file.isPublic = false;
-    files.save(file);
 
     const returnObj = { id: file._id, ...file };
     delete returnObj._id;
     delete returnObj.localPath;
     return response.json(returnObj);
+  }
+
+  static async getFile(request, response) {
+    const files = dbClient.db.collection('files');
+    const token = request.headers['x-token'];
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    const fileId = request.params.id;
+    const fileArray = await files.find({ _id: ObjectID(fileId) }).toArray();
+    if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
+
+    const file = fileArray[0];
+    if (file.isPublic === false || userId === null) return response.status(404).json({ error: 'Not found' });
+    if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
+    if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
+
+    const mimeType = mime.lookup(file.name);
+    response.setHeader('Content-Type', mimeType);
+    const data = await fs.promises.readFile(file.localPath);
+    return response.end(data);
   }
 }
 
