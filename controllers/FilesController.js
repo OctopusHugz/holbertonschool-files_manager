@@ -101,18 +101,42 @@ class FilesController {
     const userId = await redisClient.get(key);
     if (userId === null) response.status(401).json({ error: 'Unauthorized' });
 
-    // Based on the query parameters parentId and page, return the list of file document
+    const { parentId } = request.query;
+    let { page } = request.query;
+    if (!page) page = 0;
 
-    // parentId:
-    // No validation of parentId needed
-    // if the parentId is not linked to any user folder, returns an empty list
-    // By default, parentId is equal to 0 = the root
-
-    // Pagination:
-    // Each page should be 20 items max
-    // page query parameter starts at 0 for the first page.
-    // If equals to 1, it means it’s the second page(form the 20th to the 40th), etc…
-    // Pagination can be done directly by the aggregate of MongoDB
+    if (!parentId) {
+      const folderArray = await files.aggregate([
+        { $match: { userId: ObjectID(userId) } },
+        { $skip: page * 20 },
+        { $limit: 20 },
+      ]).toArray();
+      if (folderArray.length === 0) return response.json([]);
+      const mappedFolderArray = folderArray.map((file) => ({
+        id: file._id,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: file.isPublic,
+        parentId: file.parentId,
+      }));
+      return response.json(mappedFolderArray);
+    }
+    const folderArray = await files.aggregate([
+      { $match: { parentId: ObjectID(parentId) } },
+      { $skip: page * 20 },
+      { $limit: 20 },
+    ]).toArray();
+    if (folderArray.length === 0) return response.json([]);
+    const mappedFolderArray = folderArray.map((file) => ({
+      id: file._id,
+      userId: file.userId,
+      name: file.name,
+      type: file.type,
+      isPublic: file.isPublic,
+      parentId: file.parentId,
+    }));
+    return response.json(mappedFolderArray);
   }
 }
 
