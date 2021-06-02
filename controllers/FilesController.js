@@ -21,11 +21,11 @@ class FilesController {
 
     if (!name) {
       response.statusCode = 400;
-      response.json({ error: 'Missing name' });
+      return response.json({ error: 'Missing name' });
     }
     if (!type || ['folder', 'file', 'name'].indexOf(type) === -1) {
       response.statusCode = 400;
-      response.json({ error: 'Missing type' });
+      return response.json({ error: 'Missing type' });
     }
     if (!parentId) parentId = 0;
     else {
@@ -38,7 +38,7 @@ class FilesController {
     if (!isPublic) isPublic = false;
     if (!data && type !== 'folder') {
       response.statusCode = 400;
-      response.json({ error: 'Missing data' });
+      return response.json({ error: 'Missing data' });
     }
     if (type !== 'folder') {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
@@ -56,21 +56,20 @@ class FilesController {
         parentId: parentId === 0 ? parentId : ObjectID(parentId),
         localPath,
       });
-      response.json({
+      return response.json({
         id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId, localPath,
       });
-    } else {
-      const resultObj = await files.insertOne({
-        userId: ObjectID(userId),
-        name,
-        type,
-        isPublic,
-        parentId: parentId === 0 ? parentId : ObjectID(parentId),
-      });
-      response.json({
-        id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
-      });
     }
+    const resultObj = await files.insertOne({
+      userId: ObjectID(userId),
+      name,
+      type,
+      isPublic,
+      parentId: parentId === 0 ? parentId : ObjectID(parentId),
+    });
+    return response.json({
+      id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
+    });
   }
 }
 
