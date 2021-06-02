@@ -20,14 +20,17 @@ class AuthController {
     const user = userExistsArray[0];
     const token = uuidv4();
     const key = `auth_${token}`;
-    redisClient.set(key, user._id.toString(), 60 * 60 * 24);
+    await redisClient.set(key, user._id.toString(), 60 * 60 * 24);
     response.json({ token });
   }
 
-  static getDisconnect(request, response) {
-    // Retrieve the user based on the token:
-    // If not found, return an error Unauthorized with a status code 401
-    // Otherwise, delete the token in Redis and return nothing with a status code 204
+  static async getDisconnect(request, response) {
+    const token = request.headers['x-token'];
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    if (userId === null) response.status(401).json({ error: 'Unauthorized' });
+    await redisClient.del(key);
+    response.status(204).end();
   }
 }
 
