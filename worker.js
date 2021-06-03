@@ -5,6 +5,7 @@ const imageThumbnail = require('image-thumbnail');
 const dbClient = require('./utils/db');
 
 const fileQueue = new Queue('fileQueue');
+const userQueue = new Queue('userQueue');
 
 fileQueue.process(async (job, done) => {
   if (!job.data.fileId) throw new Error('Missing fileId');
@@ -27,6 +28,19 @@ fileQueue.process(async (job, done) => {
   } catch (error) {
     console.error(error);
   }
+
+  done();
+});
+
+userQueue.process(async (job, done) => {
+  if (!job.data.userId) throw new Error('Missing userId');
+
+  const users = dbClient.db.collection('users');
+  const userArray = await users.find({ _id: ObjectID(job.data.userId) }).toArray();
+  if (userArray.length === 0) throw new Error('User not found');
+
+  const user = userArray[0];
+  console.log(`Welcome ${user.email}!`);
 
   done();
 });
