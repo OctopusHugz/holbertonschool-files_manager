@@ -47,9 +47,7 @@ describe('UserController.postNew', () => {
       done();
     });
   });
-});
 
-describe('UserController.postNew', () => {
   it('checks the return of postNew with user that already exists', (done) => {
     const bodyData = {
       email: `testuser${randomUserId}@email.com`,
@@ -66,9 +64,7 @@ describe('UserController.postNew', () => {
       done();
     });
   });
-});
 
-describe('UserController.postNew', () => {
   it('checks the return of postNew with missing email', (done) => {
     const bodyData = {
       password: `${randomPassword}abcde`,
@@ -84,9 +80,7 @@ describe('UserController.postNew', () => {
       done();
     });
   });
-});
 
-describe('UserController.postNew', () => {
   it('checks the return of postNew with missing password', (done) => {
     const bodyData = {
       email: `testuser${randomUserId}@email.com`,
