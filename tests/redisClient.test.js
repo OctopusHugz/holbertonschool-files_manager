@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const redisClient = require('../utils/redis');
 
 describe('redisClient', () => {
-  it('checks return of .isAlive()', () => {
+  it('checks the return of .isAlive()', () => {
     expect(redisClient.isAlive()).to.equal(true);
   });
 
-  it('checks return of .get()', (done) => {
+  it('checks the return of .get()', (done) => {
     (async () => {
       expect(await redisClient.get('randomKey1')).to.equal(null);
       await redisClient.set('Holberton', 'School', 1);
@@ -20,7 +20,7 @@ describe('redisClient', () => {
     })();
   });
 
-  it('checks return of .set()', (done) => {
+  it('checks the return of .set()', (done) => {
     (async () => {
       expect(await redisClient.get('randomKey1')).to.equal(null);
       await redisClient.set('Holberton', 'School', 3);
@@ -34,7 +34,7 @@ describe('redisClient', () => {
     })();
   }).timeout(11000);
 
-  it('checks return of .del()', async () => {
+  it('checks the return of .del()', async () => {
     await redisClient.set('Holberton', 'School', 5);
     await redisClient.del('Holberton');
     expect(await redisClient.get('Holberton')).to.equal(null);
