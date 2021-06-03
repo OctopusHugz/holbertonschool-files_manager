@@ -2,6 +2,7 @@ const { ObjectID } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const mime = require('mime-types');
+const Queue = require('bull');
 const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
@@ -20,11 +21,13 @@ class FilesController {
     const { data } = request.body;
     let resultObj;
 
+    const fileQueue = new Queue('fileQueue');
+
     if (!name) {
       response.statusCode = 400;
       return response.json({ error: 'Missing name' });
     }
-    if (!type || ['folder', 'file', 'name'].indexOf(type) === -1) {
+    if (!type || ['folder', 'file', 'image'].indexOf(type) === -1) {
       response.statusCode = 400;
       return response.json({ error: 'Missing type' });
     }
@@ -47,8 +50,8 @@ class FilesController {
 
       const fileNameUUID = uuidv4();
       const localPath = `${folderPath}/${fileNameUUID}`;
-      const clearData = Buffer.from(data, 'base64').toString();
-      await fs.promises.writeFile(localPath, clearData, { flag: 'w+' });
+      const clearData = Buffer.from(data, 'base64');
+      await fs.promises.writeFile(localPath, clearData.toString(), { flag: 'w+' });
       resultObj = await files.insertOne({
         userId: ObjectID(userId),
         name,
@@ -57,6 +60,10 @@ class FilesController {
         parentId: parentId === 0 ? parentId : ObjectID(parentId),
         localPath,
       });
+      if (type === 'image') {
+        await fs.promises.writeFile(localPath, clearData, { flag: 'w+', encoding: 'binary' });
+        fileQueue.add({ userId, fileId: resultObj.insertedId, localPath });
+      }
     } else {
       resultObj = await files.insertOne({
         userId: ObjectID(userId),
@@ -204,19 +211,25 @@ class FilesController {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
+    const { size } = request.query;
     const fileId = request.params.id;
     const fileArray = await files.find({ _id: ObjectID(fileId) }).toArray();
     if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
 
     const file = fileArray[0];
-    if (file.isPublic === false || userId === null) return response.status(404).json({ error: 'Not found' });
+    if (file.isPublic === false || (token !== undefined && userId === null)) return response.status(404).json({ error: 'Not found' });
     if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
     if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
-
     const mimeType = mime.lookup(file.name);
     response.setHeader('Content-Type', mimeType);
-    const data = await fs.promises.readFile(file.localPath);
-    return response.end(data);
+    let data;
+    if (size) {
+      data = await fs.promises.readFile(`${file.localPath}_${size}`);
+    } else {
+      data = await fs.promises.readFile(file.localPath);
+    }
+    if (data) { return response.end(data); }
+    return response.status(404).json({ error: 'Not found' });
   }
 }
 
