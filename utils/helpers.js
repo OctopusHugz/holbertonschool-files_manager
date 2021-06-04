@@ -135,6 +135,15 @@ async function userInputValidation(response, email, password) {
   return hashedPassword;
 }
 
+async function credsFromAuthHeaderString(fullAuthHeader) {
+  const b64AuthHeader = fullAuthHeader.slice(6);
+  const userCreds = Buffer.from(b64AuthHeader, 'base64').toString();
+  const email = userCreds.split(':')[0];
+  const password = userCreds.split(':')[1];
+  const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
+  return { email, password: hashedPassword };
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
@@ -147,3 +156,4 @@ module.exports.findUserByCreds = findUserByCreds;
 module.exports.credsFromBasicAuth = credsFromBasicAuth;
 module.exports.checkFileAndReadContents = checkFileAndReadContents;
 module.exports.userInputValidation = userInputValidation;
+module.exports.credsFromAuthHeaderString = credsFromAuthHeaderString;
