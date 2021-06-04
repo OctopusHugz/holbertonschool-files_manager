@@ -18,17 +18,9 @@ class DBClient {
     return this.client.isConnected();
   }
 
-  async nbUsers() {
-    const collection = this.db.collection('users');
-    const resArray = await collection.find({}).toArray();
-    return resArray.length;
-  }
+  async nbUsers() { return this.db.collection('users').countDocuments(); }
 
-  async nbFiles() {
-    const collection = this.db.collection('files');
-    const resArray = await collection.find({}).toArray();
-    return resArray.length;
-  }
+  async nbFiles() { return this.db.collection('files').countDocuments(); }
 }
 
 const dbClient = new DBClient();
