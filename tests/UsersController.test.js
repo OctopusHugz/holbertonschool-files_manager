@@ -9,7 +9,7 @@ const { getRandomInt } = require('../utils/helpers');
 const randomUserId = getRandomInt(1, 99999999);
 const randomPassword = getRandomInt(1, 99999999);
 
-describe('UserController.postNew', () => {
+describe('UsersController', () => {
   it('checks the return of postNew with a random new user', (done) => {
     // Below code is possible fix to timeout of dbClient,
     // but search for more robust fix
