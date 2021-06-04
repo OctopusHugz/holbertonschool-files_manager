@@ -5,6 +5,8 @@ const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
 const { findUserByCreds, credsFromAuthHeaderString } = require('../utils/helpers');
 
+const fPath = process.env.FOLDER_PATH || '/tmp/files_manager';
+
 describe('FilesController', () => {
   it('checks the return of .postUpload() with valid user', (done) => {
     // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
@@ -53,6 +55,8 @@ describe('FilesController', () => {
         expect(file.type).to.equal('file');
         expect(file.isPublic).to.equal(false);
         expect(file.parentId).to.equal(0);
+        expect(file).to.have.property('localPath');
+        expect(file.localPath).to.contain(fPath);
         done();
       });
     });
@@ -241,6 +245,8 @@ describe('FilesController', () => {
           expect(file.type).to.equal('file');
           expect(file.isPublic).to.equal(false);
           expect(file.parentId.toString()).to.equal(parentId);
+          expect(file).to.have.property('localPath');
+          expect(file.localPath).to.contain(fPath);
           done();
         });
       });
