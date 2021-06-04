@@ -57,4 +57,109 @@ describe('FilesController', () => {
       });
     });
   });
+
+  it('checks the return of .postUpload() with valid user, missing name in request body', (done) => {
+    // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
+    // for user 'bob@dylan.com'
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    let token;
+    request({
+      url: 'http://0.0.0.0:5000/connect',
+      headers: headerData,
+    }, async (error, response, body) => {
+      const jBody = JSON.parse(body);
+      const creds = await credsFromAuthHeaderString(headerData.Authorization);
+      const user = await findUserByCreds(response, creds.email, creds.password);
+      token = jBody.token;
+      expect(response.statusCode).to.equal(200);
+      expect(jBody).to.have.property('token');
+      expect(token.length).to.equal(36);
+      expect(await redisClient.get(`auth_${token}`)).to.equal(user._id.toString());
+
+      const postHeaders = { 'X-Token': token, 'Content-Type': 'application/json' };
+      const bodyData = { type: 'file', data: 'SGVsbG8gV2Vic3RhY2shCg==' };
+      request.post({
+        url: 'http://0.0.0.0:5000/files',
+        headers: postHeaders,
+        body: JSON.stringify(bodyData),
+      }, async (error, response, body) => {
+        const jBody = JSON.parse(body);
+        expect(response.statusCode).to.equal(400);
+        expect(jBody).to.deep.equal({ error: 'Missing name' });
+        done();
+      });
+    });
+  });
+
+  it('checks the return of .postUpload() with valid user, missing type in request body', (done) => {
+    // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
+    // for user 'bob@dylan.com'
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    let token;
+    request({
+      url: 'http://0.0.0.0:5000/connect',
+      headers: headerData,
+    }, async (error, response, body) => {
+      const jBody = JSON.parse(body);
+      const creds = await credsFromAuthHeaderString(headerData.Authorization);
+      const user = await findUserByCreds(response, creds.email, creds.password);
+      token = jBody.token;
+      expect(response.statusCode).to.equal(200);
+      expect(jBody).to.have.property('token');
+      expect(token.length).to.equal(36);
+      expect(await redisClient.get(`auth_${token}`)).to.equal(user._id.toString());
+
+      const postHeaders = { 'X-Token': token, 'Content-Type': 'application/json' };
+      const bodyData = { name: 'myText.txt', data: 'SGVsbG8gV2Vic3RhY2shCg==' };
+      request.post({
+        url: 'http://0.0.0.0:5000/files',
+        headers: postHeaders,
+        body: JSON.stringify(bodyData),
+      }, async (error, response, body) => {
+        const jBody = JSON.parse(body);
+        expect(response.statusCode).to.equal(400);
+        expect(jBody).to.deep.equal({ error: 'Missing type' });
+        done();
+      });
+    });
+  });
+
+  it('checks the return of .postUpload() with valid user, missing data in request body and type != folder', (done) => {
+    // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
+    // for user 'bob@dylan.com'
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    let token;
+    request({
+      url: 'http://0.0.0.0:5000/connect',
+      headers: headerData,
+    }, async (error, response, body) => {
+      const jBody = JSON.parse(body);
+      const creds = await credsFromAuthHeaderString(headerData.Authorization);
+      const user = await findUserByCreds(response, creds.email, creds.password);
+      token = jBody.token;
+      expect(response.statusCode).to.equal(200);
+      expect(jBody).to.have.property('token');
+      expect(token.length).to.equal(36);
+      expect(await redisClient.get(`auth_${token}`)).to.equal(user._id.toString());
+
+      const postHeaders = { 'X-Token': token, 'Content-Type': 'application/json' };
+      const bodyData = { name: 'myText.txt', type: 'file' };
+      request.post({
+        url: 'http://0.0.0.0:5000/files',
+        headers: postHeaders,
+        body: JSON.stringify(bodyData),
+      }, async (error, response, body) => {
+        const jBody = JSON.parse(body);
+        expect(response.statusCode).to.equal(400);
+        expect(jBody).to.deep.equal({ error: 'Missing data' });
+        done();
+      });
+    });
+  });
 });
