@@ -5,7 +5,7 @@ const mime = require('mime-types');
 const Queue = require('bull');
 const dbClient = require('../utils/db');
 const {
-  checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile,
+  checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile, aggregateAndPaginate,
 } = require('../utils/helpers');
 
 class FilesController {
@@ -84,43 +84,9 @@ class FilesController {
     const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
     const { parentId } = request.query;
-    let { page } = request.query;
-
-    if (!page) page = 0;
-    if (!parentId) {
-      // Still need to test this pagination with > 20 items and page > 0
-      const folderArray = await files.aggregate([
-        { $match: { userId: ObjectID(userId) } },
-        { $skip: page * 20 },
-        { $limit: 20 },
-      ]).toArray();
-      if (folderArray.length === 0) return response.json([]);
-      const mappedFolderArray = folderArray.map((file) => ({
-        id: file._id,
-        userId: file.userId,
-        name: file.name,
-        type: file.type,
-        isPublic: file.isPublic,
-        parentId: file.parentId,
-      }));
-      return response.json(mappedFolderArray);
-    }
-    // Still need to test this pagination with > 20 items and page > 0
-    const folderArray = await files.aggregate([
-      { $match: { parentId: ObjectID(parentId) } },
-      { $skip: page * 20 },
-      { $limit: 20 },
-    ]).toArray();
-    if (folderArray.length === 0) return response.json([]);
-    const mappedFolderArray = folderArray.map((file) => ({
-      id: file._id,
-      userId: file.userId,
-      name: file.name,
-      type: file.type,
-      isPublic: file.isPublic,
-      parentId: file.parentId,
-    }));
-    return response.json(mappedFolderArray);
+    const searcher = parentId || userId;
+    const { page } = request.query || 0;
+    return aggregateAndPaginate(response, files, page, searcher);
   }
 
   static async putPublish(request, response) {
@@ -144,10 +110,13 @@ class FilesController {
     const userId = await checkAuth(request, response);
     const file = await findFile(request, response, files, userId);
 
+    // Refactor into fileErrorChecks() that returns mimeType
     if (file.isPublic === false || (token !== undefined && userId === null)) return response.status(404).json({ error: 'Not found' });
     if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
     if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
     const mimeType = mime.lookup(file.name);
+    // const mimeType = await fileErrorChecks()
+    // Or does it include the rest of logic below?
     response.setHeader('Content-Type', mimeType);
     let data;
     if (size) {
