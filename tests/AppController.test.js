@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const request = require('request');
 const dbClient = require('../utils/db');
 
-describe('AppController.getStatus', () => {
+describe('AppController', () => {
   it('checks the return of getStatus', (done) => {
     request('http://0.0.0.0:5000/status', (error, response, body) => {
       expect(response.statusCode).to.equal(200);
@@ -10,9 +10,7 @@ describe('AppController.getStatus', () => {
       done();
     });
   });
-});
 
-describe('AppController.getStats', () => {
   it('checks the return of getStats', (done) => {
     request('http://0.0.0.0:5000/stats', async (error, response, body) => {
       const jBody = JSON.parse(body);
