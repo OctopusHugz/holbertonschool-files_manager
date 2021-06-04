@@ -362,4 +362,40 @@ describe('FilesController', () => {
       });
     });
   });
+
+  it('checks the return of .getShow() with valid user, file linked to userId', () => {
+
+  });
+
+  it('checks the return of .getShow() with invalid user', () => {
+
+  });
+
+  it('checks the return of .getShow() with valid user, no file linked to userId', () => {
+
+  });
+
+  it('checks the return of .getIndex() with valid user, parentId linked to user folder', () => {
+
+  });
+
+  it('checks the return of .getIndex() with valid user, parentId not linked to user folder', () => {
+
+  });
+
+  it('checks the return of .getIndex() with valid user, parentId == 0', () => {
+
+  });
+
+  it('checks the return of .getIndex() with valid user, parentId linked to user folder, with pagination', () => {
+
+  });
+
+  it('checks the return of .getIndex() with valid user, parentId == 0, with pagination', () => {
+
+  });
+
+  it('checks the return of .getIndex() with invalid user', () => {
+
+  });
 });
