@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const { ObjectID } = require('mongodb');
+const fs = require('fs');
+const mime = require('mime-types');
 const redisClient = require('./redis');
 const dbClient = require('./db');
 
@@ -96,6 +98,22 @@ async function credsFromBasicAuth(request) {
   return { email, password: hashedPassword };
 }
 
+async function checkFileAndReadContents(response, file, token, userId, size) {
+  if (file.isPublic === false || (token !== undefined && userId === null)) return response.status(404).json({ error: 'Not found' });
+  if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
+  if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
+  const mimeType = mime.lookup(file.name);
+  response.setHeader('Content-Type', mimeType);
+  let data;
+  if (size) {
+    data = await fs.promises.readFile(`${file.localPath}_${size}`);
+  } else {
+    data = await fs.promises.readFile(file.localPath);
+  }
+  if (data) { return response.end(data); }
+  return response.status(404).json({ error: 'Not found' });
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
@@ -106,3 +124,4 @@ module.exports.findUserById = findUserById;
 module.exports.checkAuthReturnKey = checkAuthReturnKey;
 module.exports.findUserByCreds = findUserByCreds;
 module.exports.credsFromBasicAuth = credsFromBasicAuth;
+module.exports.checkFileAndReadContents = checkFileAndReadContents;
