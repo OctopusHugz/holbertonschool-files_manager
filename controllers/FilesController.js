@@ -80,8 +80,8 @@ class FilesController {
   }
 
   static async getIndex(request, response) {
-    const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
+    const files = dbClient.db.collection('files');
     const { parentId } = request.query;
     const searcher = parentId || userId;
     const { page } = request.query || 0;
@@ -89,24 +89,24 @@ class FilesController {
   }
 
   static async putPublish(request, response) {
-    const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
+    const files = dbClient.db.collection('files');
     const file = await findAndUpdateFile(request, response, files, userId, true);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async putUnpublish(request, response) {
-    const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
+    const files = dbClient.db.collection('files');
     const file = await findAndUpdateFile(request, response, files, userId, false);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async getFile(request, response) {
+    const userId = await checkAuth(request, response);
     const files = dbClient.db.collection('files');
     const token = request.headers['x-token'];
     const { size } = request.query;
-    const userId = await checkAuth(request, response);
     const file = await findFile(request, response, files, userId);
     return checkFileAndReadContents(response, file, token, userId, size);
   }
