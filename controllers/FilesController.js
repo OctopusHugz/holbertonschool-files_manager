@@ -67,6 +67,7 @@ class FilesController {
         parentId: parentId === 0 ? parentId : ObjectID(parentId),
       });
     }
+    response.statusCode = 201;
     return response.json({
       id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
     });
