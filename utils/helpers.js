@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { ObjectID } = require('mongodb');
 const redisClient = require('./redis');
 const dbClient = require('./db');
@@ -64,10 +65,35 @@ async function aggregateAndPaginate(response, files, page, searcher) {
   return response.json(mappedFolderArray);
 }
 
-async function findUser(userId) {
+async function findUserById(userId) {
   const users = dbClient.db.collection('users');
   const userExistsArray = await users.find(`ObjectId("${userId}")`).toArray();
   return userExistsArray[0];
+}
+
+async function checkAuthReturnKey(request, response) {
+  const token = request.headers['x-token'];
+  const key = `auth_${token}`;
+  const userId = await redisClient.get(key);
+  if (userId === null) response.status(401).json({ error: 'Unauthorized' });
+  return key;
+}
+
+async function findUserByCreds(response, email, hashedPassword) {
+  const users = dbClient.db.collection('users');
+  const userExistsArray = await users.find({ email, password: hashedPassword }).toArray();
+  if (userExistsArray.length === 0) response.status(401).json({ error: 'Unauthorized' });
+  return userExistsArray[0];
+}
+
+async function credsFromBasicAuth(request) {
+  const fullAuthHeader = request.headers.authorization;
+  const b64AuthHeader = fullAuthHeader.slice(6);
+  const userCreds = Buffer.from(b64AuthHeader, 'base64').toString();
+  const email = userCreds.split(':')[0];
+  const password = userCreds.split(':')[1];
+  const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
+  return { email, password: hashedPassword };
 }
 
 module.exports.getRandomInt = getRandomInt;
@@ -76,4 +102,7 @@ module.exports.findFile = findFile;
 module.exports.sanitizeReturnObj = sanitizeReturnObj;
 module.exports.findAndUpdateFile = findAndUpdateFile;
 module.exports.aggregateAndPaginate = aggregateAndPaginate;
-module.exports.findUser = findUser;
+module.exports.findUserById = findUserById;
+module.exports.checkAuthReturnKey = checkAuthReturnKey;
+module.exports.findUserByCreds = findUserByCreds;
+module.exports.credsFromBasicAuth = credsFromBasicAuth;
