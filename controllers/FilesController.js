@@ -1,11 +1,11 @@
 const { ObjectID } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const mime = require('mime-types');
 const Queue = require('bull');
 const dbClient = require('../utils/db');
 const {
-  checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile, aggregateAndPaginate,
+  checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile,
+  aggregateAndPaginate, checkFileAndReadContents,
 } = require('../utils/helpers');
 
 class FilesController {
@@ -13,7 +13,6 @@ class FilesController {
     const fileQueue = new Queue('fileQueue');
     const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
-
     const { name, type, data } = request.body;
     let { parentId, isPublic } = request.body;
     let resultObj;
@@ -109,23 +108,7 @@ class FilesController {
     const { size } = request.query;
     const userId = await checkAuth(request, response);
     const file = await findFile(request, response, files, userId);
-
-    // Refactor into fileErrorChecks() that returns mimeType
-    if (file.isPublic === false || (token !== undefined && userId === null)) return response.status(404).json({ error: 'Not found' });
-    if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
-    if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
-    const mimeType = mime.lookup(file.name);
-    // const mimeType = await fileErrorChecks()
-    // Or does it include the rest of logic below?
-    response.setHeader('Content-Type', mimeType);
-    let data;
-    if (size) {
-      data = await fs.promises.readFile(`${file.localPath}_${size}`);
-    } else {
-      data = await fs.promises.readFile(file.localPath);
-    }
-    if (data) { return response.end(data); }
-    return response.status(404).json({ error: 'Not found' });
+    return checkFileAndReadContents(response, file, token, userId, size);
   }
 }
 
