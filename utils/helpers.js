@@ -1,5 +1,6 @@
 const { ObjectID } = require('mongodb');
 const redisClient = require('./redis');
+const dbClient = require('./db');
 
 function getRandomInt(min, max) {
   const minCeil = Math.ceil(min);
@@ -63,9 +64,16 @@ async function aggregateAndPaginate(response, files, page, searcher) {
   return response.json(mappedFolderArray);
 }
 
+async function findUser(userId) {
+  const users = dbClient.db.collection('users');
+  const userExistsArray = await users.find(`ObjectId("${userId}")`).toArray();
+  return userExistsArray[0];
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
 module.exports.sanitizeReturnObj = sanitizeReturnObj;
 module.exports.findAndUpdateFile = findAndUpdateFile;
 module.exports.aggregateAndPaginate = aggregateAndPaginate;
+module.exports.findUser = findUser;
