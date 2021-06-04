@@ -114,6 +114,27 @@ async function checkFileAndReadContents(response, file, token, userId, size) {
   return response.status(404).json({ error: 'Not found' });
 }
 
+async function userInputValidation(response, email, password) {
+  if (!email) {
+    response.statusCode = 400;
+    return response.json({ error: 'Missing email' });
+  }
+  if (!password) {
+    response.statusCode = 400;
+    return response.json({ error: 'Missing password' });
+  }
+
+  const users = dbClient.db.collection('users');
+  const userExistsArray = await users.find({ email }).toArray();
+  if (userExistsArray.length > 0) {
+    response.statusCode = 400;
+    return response.json({ error: 'Already exist' });
+  }
+
+  const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
+  return hashedPassword;
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
@@ -125,3 +146,4 @@ module.exports.checkAuthReturnKey = checkAuthReturnKey;
 module.exports.findUserByCreds = findUserByCreds;
 module.exports.credsFromBasicAuth = credsFromBasicAuth;
 module.exports.checkFileAndReadContents = checkFileAndReadContents;
+module.exports.userInputValidation = userInputValidation;
