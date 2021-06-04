@@ -45,8 +45,27 @@ async function findAndUpdateFile(request, response, files, userId, isPublic) {
   return findFile(request, response, files, userId);
 }
 
+async function aggregateAndPaginate(response, files, page, searcher) {
+  const folderArray = await files.aggregate([
+    { $match: { searcher: ObjectID(searcher) } },
+    { $skip: page * 20 },
+    { $limit: 20 },
+  ]).toArray();
+  if (folderArray.length === 0) return response.json([]);
+  const mappedFolderArray = folderArray.map((file) => ({
+    id: file._id,
+    userId: file.userId,
+    name: file.name,
+    type: file.type,
+    isPublic: file.isPublic,
+    parentId: file.parentId,
+  }));
+  return response.json(mappedFolderArray);
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
 module.exports.sanitizeReturnObj = sanitizeReturnObj;
 module.exports.findAndUpdateFile = findAndUpdateFile;
+module.exports.aggregateAndPaginate = aggregateAndPaginate;
