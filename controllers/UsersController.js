@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const Queue = require('bull');
 const dbClient = require('../utils/db');
 const { checkAuth, findUserById, userInputValidation } = require('../utils/helpers');
