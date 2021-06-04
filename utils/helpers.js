@@ -35,7 +35,18 @@ async function sanitizeReturnObj(response, file, userId) {
   });
 }
 
+async function findAndUpdateFile(request, response, files, userId, isPublic) {
+  const fileId = request.params.id;
+  await findFile(request, response, files, userId);
+  await files.updateOne(
+    { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    { $set: { isPublic } },
+  );
+  return findFile(request, response, files, userId);
+}
+
 module.exports.getRandomInt = getRandomInt;
 module.exports.checkAuth = checkAuth;
 module.exports.findFile = findFile;
 module.exports.sanitizeReturnObj = sanitizeReturnObj;
+module.exports.findAndUpdateFile = findAndUpdateFile;
