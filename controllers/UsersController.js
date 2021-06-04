@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const Queue = require('bull');
 const dbClient = require('../utils/db');
-const { checkAuth, findUserById } = require('../utils/helpers');
+const { checkAuth, findUserById, userInputValidation } = require('../utils/helpers');
 
 class UsersController {
   static async postNew(request, response) {
@@ -9,24 +9,8 @@ class UsersController {
     const { email } = request.body;
     const { password } = request.body;
     const users = dbClient.db.collection('users');
+    const hashedPassword = await userInputValidation(response, email, password);
 
-    // Refactor checks for missing attributes into inputValidation()
-    if (!email) {
-      response.statusCode = 400;
-      return response.json({ error: 'Missing email' });
-    }
-    if (!password) {
-      response.statusCode = 400;
-      return response.json({ error: 'Missing password' });
-    }
-
-    const userExistsArray = await users.find({ email }).toArray();
-    if (userExistsArray.length > 0) {
-      response.statusCode = 400;
-      return response.json({ error: 'Already exist' });
-    }
-
-    const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
     const resultObj = await users.insertOne({ email, password: hashedPassword });
     const createdUser = { id: resultObj.ops[0]._id, email: resultObj.ops[0].email };
     userQueue.add({ userId: createdUser.id });
