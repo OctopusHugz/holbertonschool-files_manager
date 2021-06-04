@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const Queue = require('bull');
 const dbClient = require('../utils/db');
-const redisClient = require('../utils/redis');
+const { checkAuth } = require('../utils/helpers');
 
 class UsersController {
   static async postNew(request, response) {
@@ -34,11 +34,7 @@ class UsersController {
   }
 
   static async getMe(request, response) {
-    const token = request.headers['x-token'];
-    const key = `auth_${token}`;
-    const userId = await redisClient.get(key);
-    if (userId === null) return response.status(401).json({ error: 'Unauthorized' });
-
+    const userId = await checkAuth(request, response);
     const users = dbClient.db.collection('users');
     const userExistsArray = await users.find(`ObjectId("${userId}")`).toArray();
     const user = userExistsArray[0];
