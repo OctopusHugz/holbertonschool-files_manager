@@ -164,7 +164,6 @@ async function getFileCheckAuth(request) {
   const token = request.headers['x-token'];
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  // if (userId === null) response.status(404).json({ error: 'Not found' });
   if (userId === null) return null;
   return userId;
 }
