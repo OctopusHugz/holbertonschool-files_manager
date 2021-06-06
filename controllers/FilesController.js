@@ -12,7 +12,6 @@ class FilesController {
   // Refactor postUpload!
   static async postUpload(request, response) {
     const fileQueue = new Queue('fileQueue');
-    const files = dbClient.db.collection('files');
     const userId = await checkAuth(request, response);
     const { name, type, data } = request.body;
     let { parentId, isPublic } = request.body;
@@ -28,7 +27,7 @@ class FilesController {
     }
     if (!parentId) parentId = 0;
     else {
-      const parentFileArray = await files.find({ _id: ObjectID(parentId) }).toArray();
+      const parentFileArray = await dbClient.files.find({ _id: ObjectID(parentId) }).toArray();
       if (parentFileArray.length === 0) return response.status(400).json({ error: 'Parent not found' });
 
       const file = parentFileArray[0];
@@ -47,7 +46,7 @@ class FilesController {
       const localPath = `${folderPath}/${fileNameUUID}`;
       const clearData = Buffer.from(data, 'base64');
       await fs.promises.writeFile(localPath, clearData.toString(), { flag: 'w+' });
-      resultObj = await files.insertOne({
+      resultObj = await dbClient.files.insertOne({
         userId: ObjectID(userId),
         name,
         type,
@@ -60,7 +59,7 @@ class FilesController {
         fileQueue.add({ userId, fileId: resultObj.insertedId, localPath });
       }
     } else {
-      resultObj = await files.insertOne({
+      resultObj = await dbClient.files.insertOne({
         userId: ObjectID(userId),
         name,
         type,
@@ -76,41 +75,36 @@ class FilesController {
 
   static async getShow(request, response) {
     const userId = await checkAuth(request, response);
-    const files = dbClient.db.collection('files');
-    const file = await findFile(request, response, files, userId);
+    const file = await findFile(request, response, dbClient.files, userId);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async getIndex(request, response) {
     const userId = await checkAuth(request, response);
-    const files = dbClient.db.collection('files');
     const { parentId } = request.query || 0;
     const searcherTerm = parentId === undefined ? 'userId' : 'parentId';
     const searcherValue = parentId === undefined ? userId : parentId;
     const { page } = request.query || 0;
-    return aggregateAndPaginate(response, files, page, searcherTerm, searcherValue);
+    return aggregateAndPaginate(response, dbClient.files, page, searcherTerm, searcherValue);
   }
 
   static async putPublish(request, response) {
     const userId = await checkAuth(request, response);
-    const files = dbClient.db.collection('files');
-    const file = await findAndUpdateFile(request, response, files, userId, true);
+    const file = await findAndUpdateFile(request, response, dbClient.files, userId, true);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async putUnpublish(request, response) {
     const userId = await checkAuth(request, response);
-    const files = dbClient.db.collection('files');
-    const file = await findAndUpdateFile(request, response, files, userId, false);
+    const file = await findAndUpdateFile(request, response, dbClient.files, userId, false);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async getFile(request, response) {
     const token = request.headers['x-token'];
     const userId = await getFileCheckAuth(request);
-    const files = dbClient.db.collection('files');
     const { size } = request.query;
-    const file = await findFile(request, response, files, userId);
+    const file = await findFile(request, response, dbClient.files, userId);
     return checkFileAndReadContents(response, file, token, userId, size);
   }
 }
