@@ -3,10 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import Queue from 'bull';
 import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
 import {
   checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile,
-  aggregateAndPaginate, checkFileAndReadContents,
+  aggregateAndPaginate, checkFileAndReadContents, getFileCheckAuth,
 } from '../utils/helpers';
 
 class FilesController {
@@ -108,9 +107,7 @@ class FilesController {
 
   static async getFile(request, response) {
     const token = request.headers['x-token'];
-    const key = `auth_${token}`;
-    const userId = await redisClient.get(key);
-    if (userId === null) return response.status(404).json({ error: 'Not found' });
+    const userId = await getFileCheckAuth(request, response);
     const files = dbClient.db.collection('files');
     const { size } = request.query;
     const file = await findFile(request, response, files, userId);
