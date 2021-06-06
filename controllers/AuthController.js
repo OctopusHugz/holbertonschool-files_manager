@@ -5,6 +5,7 @@ import { checkAuthReturnKey, findUserByCreds, credsFromBasicAuth } from '../util
 class AuthController {
   static async getConnect(request, response) {
     const creds = await credsFromBasicAuth(request);
+    if (creds === null) return response.status(401).json({ error: 'Unauthorized' });
     const user = await findUserByCreds(response, creds.email, creds.password);
     const token = uuidv4();
     const key = `auth_${token}`;
