@@ -9,6 +9,7 @@ import {
 } from '../utils/helpers';
 
 class FilesController {
+  // Refactor postUpload!
   static async postUpload(request, response) {
     const fileQueue = new Queue('fileQueue');
     const files = dbClient.db.collection('files');
@@ -83,10 +84,11 @@ class FilesController {
   static async getIndex(request, response) {
     const userId = await checkAuth(request, response);
     const files = dbClient.db.collection('files');
-    const { parentId } = request.query;
-    const searcher = parentId || userId;
+    const { parentId } = request.query || 0;
+    const searcherTerm = parentId === undefined ? 'userId' : 'parentId';
+    const searcherValue = parentId === undefined ? userId : parentId;
     const { page } = request.query || 0;
-    return aggregateAndPaginate(response, files, page, searcher);
+    return aggregateAndPaginate(response, files, page, searcherTerm, searcherValue);
   }
 
   static async putPublish(request, response) {
