@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 
 const app = express();
 const indexRouter = require('./routes/index');
@@ -9,4 +9,4 @@ app.use('/', indexRouter);
 app.use(express.json({ limit: '50mb' }));
 app.listen(port, console.log(`Server running on port ${port}`));
 
-module.exports = app;
+export default app;
