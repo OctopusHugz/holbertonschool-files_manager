@@ -1,6 +1,6 @@
-const { expect } = require('chai');
-const request = require('request');
-const dbClient = require('../utils/db');
+import { expect } from 'chai';
+import request from 'request';
+import dbClient from '../utils/db';
 
 describe('AppController', () => {
   it('checks the return of getStatus', (done) => {
