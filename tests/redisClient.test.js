@@ -1,5 +1,5 @@
-const { expect } = require('chai');
-const redisClient = require('../utils/redis');
+import { expect } from 'chai';
+import redisClient from '../utils/redis';
 
 describe('redisClient', () => {
   it('checks the return of .isAlive()', () => {
