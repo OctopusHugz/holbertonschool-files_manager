@@ -1,12 +1,12 @@
-const { ObjectID } = require('mongodb');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
-const Queue = require('bull');
-const dbClient = require('../utils/db');
-const {
+import { ObjectID } from 'mongodb';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import Queue from 'bull';
+import dbClient from '../utils/db';
+import {
   checkAuth, findFile, sanitizeReturnObj, findAndUpdateFile,
   aggregateAndPaginate, checkFileAndReadContents,
-} = require('../utils/helpers');
+} from '../utils/helpers';
 
 class FilesController {
   static async postUpload(request, response) {
@@ -113,4 +113,4 @@ class FilesController {
   }
 }
 
-module.exports = FilesController;
+export default FilesController;

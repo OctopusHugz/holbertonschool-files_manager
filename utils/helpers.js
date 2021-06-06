@@ -144,7 +144,7 @@ async function credsFromAuthHeaderString(fullAuthHeader) {
   return { email, password: hashedPassword };
 }
 
-export default {
+export {
   getRandomInt,
   checkAuth,
   findFile,

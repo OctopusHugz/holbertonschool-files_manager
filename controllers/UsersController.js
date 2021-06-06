@@ -1,6 +1,6 @@
-const Queue = require('bull');
-const dbClient = require('../utils/db');
-const { checkAuth, findUserById, userInputValidation } = require('../utils/helpers');
+import Queue from 'bull';
+import dbClient from '../utils/db';
+import { checkAuth, findUserById, userInputValidation } from '../utils/helpers';
 
 class UsersController {
   static async postNew(request, response) {
@@ -24,4 +24,4 @@ class UsersController {
   }
 }
 
-module.exports = UsersController;
+export default UsersController;

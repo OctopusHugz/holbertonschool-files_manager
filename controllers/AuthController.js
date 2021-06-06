@@ -1,6 +1,6 @@
-const { v4: uuidv4 } = require('uuid');
-const redisClient = require('../utils/redis');
-const { checkAuthReturnKey, findUserByCreds, credsFromBasicAuth } = require('../utils/helpers');
+import { v4 as uuidv4 } from 'uuid';
+import redisClient from '../utils/redis';
+import { checkAuthReturnKey, findUserByCreds, credsFromBasicAuth } from '../utils/helpers';
 
 class AuthController {
   static async getConnect(request, response) {
@@ -19,4 +19,4 @@ class AuthController {
   }
 }
 
-module.exports = AuthController;
+export default AuthController;
