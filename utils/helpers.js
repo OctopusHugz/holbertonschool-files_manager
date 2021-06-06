@@ -92,6 +92,7 @@ async function credsFromBasicAuth(request) {
   const fullAuthHeader = request.headers.authorization;
   const b64AuthHeader = fullAuthHeader.slice(6);
   const userCreds = Buffer.from(b64AuthHeader, 'base64').toString();
+  if (!userCreds.includes(':')) return null;
   const email = userCreds.split(':')[0];
   const password = userCreds.split(':')[1];
   const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
