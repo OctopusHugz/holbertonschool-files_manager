@@ -5,6 +5,8 @@ import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
 
 let token;
 
+// Add before() hook to create user and after hook to delete all users
+
 describe('AuthController', () => {
   it('checks the return of .getConnect() with valid user', (done) => {
     // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=

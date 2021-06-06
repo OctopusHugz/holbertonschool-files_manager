@@ -1,10 +1,10 @@
-const crypto = require('crypto');
-const { ObjectID } = require('mongodb');
-const { expect } = require('chai');
-const request = require('request');
-const dbClient = require('../utils/db');
-const redisClient = require('../utils/redis');
-const { getRandomInt, credsFromAuthHeaderString, findUserByCreds } = require('../utils/helpers');
+import crypto from 'crypto';
+import { ObjectID } from 'mongodb';
+import { expect } from 'chai';
+import request from 'request';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
+import { getRandomInt, credsFromAuthHeaderString, findUserByCreds } from '../utils/helpers';
 
 const randomUserId = getRandomInt(1, 99999999);
 const randomPassword = getRandomInt(1, 99999999);
