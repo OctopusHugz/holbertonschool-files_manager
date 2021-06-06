@@ -154,6 +154,14 @@ async function credsFromAuthHeaderString(fullAuthHeader) {
   return { email, password: hashedPassword };
 }
 
+async function getFileCheckAuth(request, response) {
+  const token = request.headers['x-token'];
+  const key = `auth_${token}`;
+  const userId = await redisClient.get(key);
+  if (userId === null) response.status(404).json({ error: 'Not found' });
+  return userId;
+}
+
 export {
   getRandomInt,
   checkAuth,
@@ -168,4 +176,5 @@ export {
   checkFileAndReadContents,
   userInputValidation,
   credsFromAuthHeaderString,
+  getFileCheckAuth,
 };
