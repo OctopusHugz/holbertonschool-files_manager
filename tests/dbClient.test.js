@@ -1,6 +1,6 @@
-const { expect } = require('chai');
-const { MongoClient, Db } = require('mongodb');
-const dbClient = require('../utils/db');
+import { expect } from 'chai';
+import { MongoClient, Db } from 'mongodb';
+import dbClient from '../utils/db';
 
 describe('dbClient', () => {
   it('checks the properties of dbClient', () => {
