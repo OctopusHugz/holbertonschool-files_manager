@@ -78,7 +78,6 @@ class FilesController {
     const userId = await checkAuth(request, response);
     const files = dbClient.db.collection('files');
     const file = await findFile(request, response, files, userId);
-    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
@@ -96,7 +95,6 @@ class FilesController {
     const userId = await checkAuth(request, response);
     const files = dbClient.db.collection('files');
     const file = await findAndUpdateFile(request, response, files, userId, true);
-    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
@@ -104,7 +102,6 @@ class FilesController {
     const userId = await checkAuth(request, response);
     const files = dbClient.db.collection('files');
     const file = await findAndUpdateFile(request, response, files, userId, false);
-    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
