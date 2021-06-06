@@ -21,9 +21,14 @@ async function checkAuth(request, response) {
 
 async function findFile(request, response, files, userId) {
   const fileId = request.params.id;
-  const fileArray = await files.find(
-    { userId: ObjectID(userId), _id: ObjectID(fileId) },
-  ).toArray();
+  let fileArray;
+  if (userId !== 'null') {
+    fileArray = await files.find({ _id: ObjectID(fileId) }).toArray();
+  } else {
+    fileArray = await files.find(
+      { userId: ObjectID(userId), _id: ObjectID(fileId) },
+    ).toArray();
+  }
   if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
   return fileArray[0];
 }
@@ -109,7 +114,7 @@ async function credsFromBasicAuth(request) {
 }
 
 async function checkFileAndReadContents(response, file, token, userId, size) {
-  if (token !== undefined && userId === null) return response.status(404).json({ error: 'Not found' });
+  if (!file.isPublic && userId === null) return response.status(404).json({ error: 'Not found' });
   if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
   if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
   const mimeType = mime.lookup(file.name);
@@ -154,11 +159,12 @@ async function credsFromAuthHeaderString(fullAuthHeader) {
   return { email, password: hashedPassword };
 }
 
-async function getFileCheckAuth(request, response) {
+async function getFileCheckAuth(request) {
   const token = request.headers['x-token'];
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  if (userId === null) response.status(404).json({ error: 'Not found' });
+  // if (userId === null) response.status(404).json({ error: 'Not found' });
+  if (userId === null) return null;
   return userId;
 }
 
