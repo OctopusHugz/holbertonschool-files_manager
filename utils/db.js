@@ -10,15 +10,16 @@ class DBClient {
   }
 
   async connectToClient() {
-    MongoClient(`mongodb://${this.host}:${this.port}`, { useUnifiedTopology: true }, (err, client) => {
-      if (!err) {
-        this.connected = true;
+    MongoClient(`mongodb://${this.host}:${this.port}`, { useUnifiedTopology: true })
+      .connect()
+      .then(async (client) => {
         this.client = client;
+        this.connected = true;
         this.db = this.client.db(this.dbName);
-        this.files = this.db.collection('files');
-        this.users = this.db.collection('users');
-      }
-    });
+        this.files = await this.db.collection('files');
+        this.users = await this.db.collection('users');
+      })
+      .catch(console.error);
   }
 
   isAlive() { return this.connected; }
