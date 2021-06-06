@@ -107,10 +107,13 @@ class FilesController {
 
   static async getFile(request, response) {
     const token = request.headers['x-token'];
-    const userId = await getFileCheckAuth(request, response);
+    const userId = await getFileCheckAuth(request);
     const files = dbClient.db.collection('files');
     const { size } = request.query;
     const file = await findFile(request, response, files, userId);
+    // console.log('file :>> ', file);
+    // make getFileCheckAuth return null first
+    // if (userId === null && )
     return checkFileAndReadContents(response, file, token, userId, size);
   }
 }
