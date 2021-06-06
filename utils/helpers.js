@@ -1,9 +1,9 @@
-const crypto = require('crypto');
-const { ObjectID } = require('mongodb');
-const fs = require('fs');
-const mime = require('mime-types');
-const redisClient = require('./redis');
-const dbClient = require('./db');
+import crypto from 'crypto';
+import { ObjectID } from 'mongodb';
+import fs from 'fs';
+import mime from 'mime-types';
+import redisClient from './redis';
+import dbClient from './db';
 
 function getRandomInt(min, max) {
   const minCeil = Math.ceil(min);
@@ -144,16 +144,18 @@ async function credsFromAuthHeaderString(fullAuthHeader) {
   return { email, password: hashedPassword };
 }
 
-module.exports.getRandomInt = getRandomInt;
-module.exports.checkAuth = checkAuth;
-module.exports.findFile = findFile;
-module.exports.sanitizeReturnObj = sanitizeReturnObj;
-module.exports.findAndUpdateFile = findAndUpdateFile;
-module.exports.aggregateAndPaginate = aggregateAndPaginate;
-module.exports.findUserById = findUserById;
-module.exports.checkAuthReturnKey = checkAuthReturnKey;
-module.exports.findUserByCreds = findUserByCreds;
-module.exports.credsFromBasicAuth = credsFromBasicAuth;
-module.exports.checkFileAndReadContents = checkFileAndReadContents;
-module.exports.userInputValidation = userInputValidation;
-module.exports.credsFromAuthHeaderString = credsFromAuthHeaderString;
+export default {
+  getRandomInt,
+  checkAuth,
+  findFile,
+  sanitizeReturnObj,
+  findAndUpdateFile,
+  aggregateAndPaginate,
+  findUserById,
+  checkAuthReturnKey,
+  findUserByCreds,
+  credsFromBasicAuth,
+  checkFileAndReadContents,
+  userInputValidation,
+  credsFromAuthHeaderString,
+};
