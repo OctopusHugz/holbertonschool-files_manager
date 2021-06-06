@@ -49,12 +49,21 @@ async function findAndUpdateFile(request, response, files, userId, isPublic) {
   return findFile(request, response, files, userId);
 }
 
-async function aggregateAndPaginate(response, files, page, searcher) {
-  const folderArray = await files.aggregate([
-    { $match: { searcher: ObjectID(searcher) } },
-    { $skip: page * 20 },
-    { $limit: 20 },
-  ]).toArray();
+async function aggregateAndPaginate(response, files, page, searcherTerm, searcherValue) {
+  let folderArray;
+  if (searcherTerm === 'userId') {
+    folderArray = await files.aggregate([
+      { $match: { userId: ObjectID(searcherValue) } },
+      { $skip: page * 20 },
+      { $limit: 20 },
+    ]).toArray();
+  } else if (searcherTerm === 'parentId') {
+    folderArray = await files.aggregate([
+      { $match: { parentId: ObjectID(searcherValue) } },
+      { $skip: page * 20 },
+      { $limit: 20 },
+    ]).toArray();
+  }
   if (folderArray.length === 0) return response.json([]);
   const mappedFolderArray = folderArray.map((file) => ({
     id: file._id,
