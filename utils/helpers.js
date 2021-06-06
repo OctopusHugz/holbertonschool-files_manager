@@ -115,6 +115,7 @@ async function credsFromBasicAuth(request) {
 
 async function checkFileAndReadContents(response, file, token, userId, size) {
   if (!file.isPublic && userId === null) return response.status(404).json({ error: 'Not found' });
+  if (!file.isPublic && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
   if (file.type === 'folder') return response.status(400).json({ error: 'A folder doesn\'t have content' });
   if (!fs.existsSync(file.localPath)) return response.status(404).json({ error: 'Not found' });
   const mimeType = mime.lookup(file.name);
