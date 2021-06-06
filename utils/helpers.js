@@ -34,6 +34,8 @@ async function findFile(request, response, files, userId) {
 }
 
 async function sanitizeReturnObj(response, file, userId) {
+  if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
+
   return response.json({
     id: file._id,
     userId,
