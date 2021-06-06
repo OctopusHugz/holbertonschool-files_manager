@@ -84,8 +84,7 @@ async function aggregateAndPaginate(response, files, page, searcherTerm, searche
 }
 
 async function findUserById(userId) {
-  const users = dbClient.db.collection('users');
-  const userExistsArray = await users.find(`ObjectId("${userId}")`).toArray();
+  const userExistsArray = await dbClient.users.find(`ObjectId("${userId}")`).toArray();
   return userExistsArray[0];
 }
 
@@ -98,8 +97,7 @@ async function checkAuthReturnKey(request, response) {
 }
 
 async function findUserByCreds(response, email, hashedPassword) {
-  const users = dbClient.db.collection('users');
-  const userExistsArray = await users.find({ email, password: hashedPassword }).toArray();
+  const userExistsArray = await dbClient.users.find({ email, password: hashedPassword }).toArray();
   if (userExistsArray.length === 0) response.status(401).json({ error: 'Unauthorized' });
   return userExistsArray[0];
 }
@@ -142,8 +140,7 @@ async function userInputValidation(response, email, password) {
     return response.json({ error: 'Missing password' });
   }
 
-  const users = dbClient.db.collection('users');
-  const userExistsArray = await users.find({ email }).toArray();
+  const userExistsArray = await dbClient.users.find({ email }).toArray();
   if (userExistsArray.length > 0) {
     response.statusCode = 400;
     return response.json({ error: 'Already exist' });

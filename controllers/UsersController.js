@@ -7,10 +7,9 @@ class UsersController {
     const userQueue = new Queue('userQueue');
     const { email } = request.body;
     const { password } = request.body;
-    const users = dbClient.db.collection('users');
     const hashedPassword = await userInputValidation(response, email, password);
 
-    const resultObj = await users.insertOne({ email, password: hashedPassword });
+    const resultObj = await dbClient.users.insertOne({ email, password: hashedPassword });
     const createdUser = { id: resultObj.ops[0]._id, email: resultObj.ops[0].email };
     userQueue.add({ userId: createdUser.id });
     response.statusCode = 201;
