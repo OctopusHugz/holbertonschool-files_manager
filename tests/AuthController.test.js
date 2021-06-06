@@ -1,7 +1,7 @@
-const { expect } = require('chai');
-const request = require('request');
-const redisClient = require('../utils/redis');
-const { findUserByCreds, credsFromAuthHeaderString } = require('../utils/helpers');
+import { expect } from 'chai';
+import request from 'request';
+import redisClient from '../utils/redis';
+import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
 
 let token;
 
