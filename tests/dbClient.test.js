@@ -3,6 +3,17 @@ import { MongoClient, Db } from 'mongodb';
 import dbClient from '../utils/db';
 
 describe('dbClient', () => {
+  before(async () => {
+    await dbClient.connectToClient();
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+  });
+
+  after(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+  });
+
   it('checks the properties of dbClient', () => {
     expect(dbClient.host).to.equal(process.env.DB_HOST || 'localhost');
     expect(dbClient.port).to.equal(process.env.DB_PORT || 27017);
@@ -16,12 +27,20 @@ describe('dbClient', () => {
   });
 
   it('checks the return of .nbUsers()', async () => {
-    const numUsers = await dbClient.db.collection('users').countDocuments();
-    expect(await dbClient.nbUsers()).to.equal(numUsers);
+    expect(dbClient.isAlive()).to.equal(true);
+    await dbClient.users.insertOne({ email: 'me-0@me.com' });
+    await dbClient.users.insertOne({ email: 'me-1@me.com' });
+    await dbClient.users.insertOne({ email: 'me-2@me.com' });
+    await dbClient.users.insertOne({ email: 'me-3@me.com' });
+    expect(await dbClient.nbUsers()).to.equal(4);
   });
 
   it('checks the return of .nbFiles()', async () => {
-    const numFiles = await dbClient.db.collection('files').countDocuments();
-    expect(await dbClient.nbFiles()).to.equal(numFiles);
+    expect(dbClient.isAlive()).to.equal(true);
+    await dbClient.files.insertOne({ name: 'file0' });
+    await dbClient.files.insertOne({ name: 'file1' });
+    await dbClient.files.insertOne({ name: 'file2' });
+    await dbClient.files.insertOne({ name: 'file3' });
+    expect(await dbClient.nbFiles()).to.equal(4);
   });
 });
