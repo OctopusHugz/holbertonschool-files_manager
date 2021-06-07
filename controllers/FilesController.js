@@ -9,22 +9,16 @@ import {
 } from '../utils/helpers';
 
 class FilesController {
-  // Refactor postUpload!
   static async postUpload(request, response) {
     const fileQueue = new Queue('fileQueue');
-    const userId = await checkAuth(request, response);
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const { name, type, data } = request.body;
     let { parentId, isPublic } = request.body;
     let resultObj;
 
-    if (!name) {
-      response.statusCode = 400;
-      return response.json({ error: 'Missing name' });
-    }
-    if (!type || ['folder', 'file', 'image'].indexOf(type) === -1) {
-      response.statusCode = 400;
-      return response.json({ error: 'Missing type' });
-    }
+    if (!name) return response.status(400).json({ error: 'Missing name' });
+    if (!type || ['folder', 'file', 'image'].indexOf(type) === -1) return response.status(400).json({ error: 'Missing type' });
     if (!parentId) parentId = 0;
     else {
       const parentFileArray = await dbClient.files.find({ _id: ObjectID(parentId) }).toArray();
@@ -34,10 +28,7 @@ class FilesController {
       if (file.type !== 'folder') return response.status(400).json({ error: 'Parent is not a folder' });
     }
     if (!isPublic) isPublic = false;
-    if (!data && type !== 'folder') {
-      response.statusCode = 400;
-      return response.json({ error: 'Missing data' });
-    }
+    if (!data && type !== 'folder') return response.status(400).json({ error: 'Missing data' });
     if (type !== 'folder') {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
       if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
@@ -67,20 +58,21 @@ class FilesController {
         parentId: parentId === 0 ? parentId : ObjectID(parentId),
       });
     }
-    response.statusCode = 201;
-    return response.json({
+    return response.status(201).json({
       id: resultObj.ops[0]._id, userId, name, type, isPublic, parentId,
     });
   }
 
   static async getShow(request, response) {
-    const userId = await checkAuth(request, response);
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findFile(request, response, dbClient.files, userId);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async getIndex(request, response) {
-    const userId = await checkAuth(request, response);
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const { parentId } = request.query || 0;
     const searcherTerm = parentId === undefined ? 'userId' : 'parentId';
     const searcherValue = parentId === undefined ? userId : parentId;
@@ -89,13 +81,15 @@ class FilesController {
   }
 
   static async putPublish(request, response) {
-    const userId = await checkAuth(request, response);
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findAndUpdateFile(request, response, dbClient.files, userId, true);
     return sanitizeReturnObj(response, file, userId);
   }
 
   static async putUnpublish(request, response) {
-    const userId = await checkAuth(request, response);
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findAndUpdateFile(request, response, dbClient.files, userId, false);
     return sanitizeReturnObj(response, file, userId);
   }
