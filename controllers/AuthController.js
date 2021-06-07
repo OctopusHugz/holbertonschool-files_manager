@@ -5,8 +5,9 @@ import { checkAuthReturnKey, findUserByCreds, credsFromBasicAuth } from '../util
 class AuthController {
   static async getConnect(request, response) {
     const creds = await credsFromBasicAuth(request);
-    if (creds === null) return response.status(401).json({ error: 'Unauthorized' });
-    const user = await findUserByCreds(response, creds.email, creds.password);
+    if (!creds) return response.status(401).json({ error: 'Unauthorized' });
+    const user = await findUserByCreds(creds.email, creds.password);
+    if (!user) return response.status(401).json({ error: 'Unauthorized' });
     const token = uuidv4();
     const key = `auth_${token}`;
     await redisClient.set(key, user._id.toString(), 60 * 60 * 24);
