@@ -96,10 +96,9 @@ async function checkAuthReturnKey(request, response) {
   return key;
 }
 
-async function findUserByCreds(response, email, hashedPassword) {
+async function findUserByCreds(email, hashedPassword) {
   const userExistsArray = await dbClient.users.find({ email, password: hashedPassword }).toArray();
-  if (userExistsArray.length === 0) response.status(401).json({ error: 'Unauthorized' });
-  return userExistsArray[0];
+  return userExistsArray.length === 0 ? null : userExistsArray[0];
 }
 
 async function credsFromBasicAuth(request) {
