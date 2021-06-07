@@ -11,12 +11,11 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (maxFloor - minCeil) + minCeil);
 }
 
-async function checkAuth(request, response) {
+async function checkAuth(request) {
   const token = request.headers['x-token'];
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  if (userId === null) return response.status(401).json({ error: 'Unauthorized' });
-  return userId;
+  return userId || null;
 }
 
 async function findFile(request, response, files, userId) {
@@ -85,7 +84,7 @@ async function aggregateAndPaginate(response, files, page, searcherTerm, searche
 
 async function findUserById(userId) {
   const userExistsArray = await dbClient.users.find(`ObjectId("${userId}")`).toArray();
-  return userExistsArray[0];
+  return userExistsArray[0] || null;
 }
 
 async function checkAuthReturnKey(request, response) {
@@ -129,26 +128,6 @@ async function checkFileAndReadContents(response, file, token, userId, size) {
   return response.status(404).json({ error: 'Not found' });
 }
 
-async function userInputValidation(response, email, password) {
-  if (!email) {
-    response.statusCode = 400;
-    return response.json({ error: 'Missing email' });
-  }
-  if (!password) {
-    response.statusCode = 400;
-    return response.json({ error: 'Missing password' });
-  }
-
-  const userExistsArray = await dbClient.users.find({ email }).toArray();
-  if (userExistsArray.length > 0) {
-    response.statusCode = 400;
-    return response.json({ error: 'Already exist' });
-  }
-
-  const hashedPassword = crypto.createHash('SHA1').update(password).digest('hex');
-  return hashedPassword;
-}
-
 async function credsFromAuthHeaderString(fullAuthHeader) {
   const b64AuthHeader = fullAuthHeader.slice(6);
   const userCreds = Buffer.from(b64AuthHeader, 'base64').toString();
@@ -178,7 +157,6 @@ export {
   findUserByCreds,
   credsFromBasicAuth,
   checkFileAndReadContents,
-  userInputValidation,
   credsFromAuthHeaderString,
   getFileCheckAuth,
 };
