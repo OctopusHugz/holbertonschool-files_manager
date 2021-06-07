@@ -1,13 +1,23 @@
 import { expect } from 'chai';
 import request from 'request';
 import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
 import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
 
 let token;
 
-// Add before() hook to create user and after hook to delete all users
-
 describe('AuthController', () => {
+  beforeEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
+  });
+
+  afterEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+  });
+
   it('checks the return of .getConnect() with valid user', (done) => {
     // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
     // for user 'bob@dylan.com'
