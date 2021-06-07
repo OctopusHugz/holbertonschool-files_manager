@@ -87,12 +87,11 @@ async function findUserById(userId) {
   return userExistsArray[0] || null;
 }
 
-async function checkAuthReturnKey(request, response) {
+async function checkAuthReturnKey(request) {
   const token = request.headers['x-token'];
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  if (userId === null) response.status(401).json({ error: 'Unauthorized' });
-  return key;
+  return userId ? key : null;
 }
 
 async function findUserByCreds(email, hashedPassword) {
