@@ -8,8 +8,10 @@ import redisClient from '../utils/redis';
 import { getRandomInt, credsFromAuthHeaderString, findUserByCreds } from '../utils/helpers';
 
 chai.use(chaiHttp);
+const requester = chai.request(app).keepOpen();
 const randomUserId = getRandomInt(1, 99999999);
 const randomPassword = getRandomInt(1, 99999999);
+let token;
 
 describe('UsersController', () => {
   beforeEach(async () => {
@@ -23,12 +25,16 @@ describe('UsersController', () => {
     await dbClient.files.deleteMany({});
   });
 
+  after(() => {
+    requester.close();
+  });
+
   it('POST /users with a random new user', (done) => {
     const bodyData = {
       email: `testuser${randomUserId}@email.com`,
       password: `${randomPassword}abcde`,
     };
-    chai.request(app)
+    requester
       .post('/users')
       .send(bodyData)
       .end(async (err, res) => {
@@ -57,7 +63,7 @@ describe('UsersController', () => {
       email: 'bob@dylan.com',
       password: 'toto1234!',
     };
-    chai.request(app)
+    requester
       .post('/users')
       .send(bodyData)
       .end((err, res) => {
@@ -72,7 +78,7 @@ describe('UsersController', () => {
     const bodyData = {
       password: `${randomPassword}abcde`,
     };
-    chai.request(app)
+    requester
       .post('/users')
       .send(bodyData)
       .end((err, res) => {
@@ -87,7 +93,7 @@ describe('UsersController', () => {
     const bodyData = {
       email: `testuser${randomUserId}@email.com`,
     };
-    chai.request(app)
+    requester
       .post('/users')
       .send(bodyData)
       .end((err, res) => {
@@ -98,67 +104,39 @@ describe('UsersController', () => {
       });
   });
 
-  // // rewrite using promises to avoid callback hell?
-  // it.skip('checks the return of .getMe() with valid user', (done) => {
-  //   // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
-  //   // for user 'bob@dylan.com'
-  //   let token;
-  //   const headerData = {
-  //     Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
-  //   };
-  //   request({
-  //     url: 'http://0.0.0.0:5000/connect',
-  //     headers: headerData,
-  //   }, async (error, response, body) => {
-  //     const jBody = JSON.parse(body);
-  //     const creds = await credsFromAuthHeaderString(headerData.Authorization);
-  //     const user = await findUserByCreds(creds.email, creds.password);
-  //     token = jBody.token;
-  //     expect(response.statusCode).to.equal(200);
-  //     expect(jBody).to.have.property('token');
-  //     expect(token.length).to.equal(36);
-  //     expect(await redisClient.get(`auth_${token}`)).to.equal(user._id.toString());
+  it('GET /users/me with valid user', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
 
-  //     // GET /users/me with header:
-  //     // X-Token: ${tokenFromGetConnect}
-  //     const tokenHeader = { 'X-Token': token };
-  //     request({
-  //       url: 'http://0.0.0.0:5000/users/me',
-  //       headers: tokenHeader,
-  //     }, async (error, response, body) => {
-  //       const jBody = JSON.parse(body);
-  //       expect(response.statusCode).to.equal(200);
-  //       expect(jBody).to.have.property('id');
-  //       expect(jBody).to.have.property('email');
-  //       expect(jBody.id.length).to.equal(24);
-  //       expect(await redisClient.get(`auth_${token}`)).to.equal(jBody.id);
-  //       expect(jBody.email).to.equal('bob@dylan.com');
-
-  //       request({
-  //         url: 'http://0.0.0.0:5000/disconnect',
-  //         headers: tokenHeader,
-  //       }, async (error, response, body) => {
-  //         expect(response.statusCode).to.equal(204);
-  //         expect(body).to.equal('');
-  //         expect(await redisClient.get(`auth_${token}`)).to.be.null
-
-  //         request({
-  //           url: 'http://0.0.0.0:5000/users/me',
-  //           headers: tokenHeader,
-  //         }, async (error, response, body) => {
-  //           const jBody = JSON.parse(body);
-  //           expect(response.statusCode).to.equal(401);
-  //           expect(jBody).to.deep.equal({ error: 'Unauthorized' });
-  //           done();
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+    requester
+      .get('/connect')
+      .set(headerData)
+      .then(async (res) => {
+        const creds = await credsFromAuthHeaderString(headerData.Authorization);
+        const user = await findUserByCreds(creds.email, creds.password);
+        token = res.body.token;
+        expect(res).to.have.status(200);
+        const tokenHeader = { 'X-Token': token };
+        requester
+          .get('/users/me')
+          .set(tokenHeader)
+          .then(async (res) => {
+            expect(res).to.have.status(200);
+            expect(res.body).to.have.property('id');
+            expect(res.body).to.have.property('email');
+            expect(res.body.id.length).to.equal(24);
+            expect(res.body.id.toString()).to.equal(user._id.toString());
+            expect(await redisClient.get(`auth_${token}`)).to.equal(res.body.id);
+            expect(res.body.email).to.equal('bob@dylan.com');
+            done();
+          });
+      });
+  });
 
   it('GET /users/me with invalid user', (done) => {
     const headerData = { 'X-Token': '031bffac-3edc-4e51-aaae-1c121317da8a' };
-    chai.request(app)
+    requester
       .get('/users/me')
       .send(headerData)
       .end((err, res) => {
