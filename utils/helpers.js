@@ -15,7 +15,7 @@ async function checkAuth(request, response) {
   const token = request.headers['x-token'];
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  if (userId === null) response.status(401).json({ error: 'Unauthorized' });
+  if (userId === null) return response.status(401).json({ error: 'Unauthorized' });
   return userId;
 }
 
