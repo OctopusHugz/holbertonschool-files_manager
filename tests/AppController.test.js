@@ -1,9 +1,8 @@
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
 import dbClient from '../utils/db';
 import app from '../server';
 
-const { expect } = chai;
 chai.use(chaiHttp);
 
 describe('AppController', () => {
