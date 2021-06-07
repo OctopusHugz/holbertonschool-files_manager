@@ -24,6 +24,7 @@ class UsersController {
     const userId = await checkAuth(request);
     if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const user = await findUserById(userId);
+    if (!user) return response.status(401).json({ error: 'Unauthorized' });
     return response.json({ id: user._id, email: user.email });
   }
 }
