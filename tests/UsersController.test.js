@@ -10,8 +10,18 @@ const randomUserId = getRandomInt(1, 99999999);
 const randomPassword = getRandomInt(1, 99999999);
 
 describe('UsersController', () => {
+  beforeEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
+  });
+
+  afterEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+  });
+
   it('checks the return of postNew with a random new user', (done) => {
-    const users = dbClient.db.collection('users');
     const bodyData = {
       email: `testuser${randomUserId}@email.com`,
       password: `${randomPassword}abcde`,
@@ -22,7 +32,7 @@ describe('UsersController', () => {
       body: JSON.stringify(bodyData),
     }, async (error, response, body) => {
       const jBody = JSON.parse(body);
-      const userArray = await users.find({
+      const userArray = await dbClient.users.find({
         _id: ObjectID(jBody.id),
         email: bodyData.email,
       }).toArray();
@@ -42,8 +52,8 @@ describe('UsersController', () => {
 
   it('checks the return of postNew with user that already exists', (done) => {
     const bodyData = {
-      email: `testuser${randomUserId}@email.com`,
-      password: `${randomPassword}abcde`,
+      email: 'bob@dylan.com',
+      password: 'toto1234!',
     };
     request.post({
       url: 'http://0.0.0.0:5000/users',
@@ -89,7 +99,7 @@ describe('UsersController', () => {
     });
   });
 
-  // rewrite using fetch() to avoid callback hell?
+  // rewrite using promises to avoid callback hell?
   it('checks the return of .getMe() with valid user', (done) => {
     // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
     // for user 'bob@dylan.com'
