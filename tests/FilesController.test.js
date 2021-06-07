@@ -1,13 +1,24 @@
-const { expect } = require('chai');
-const { ObjectID } = require('mongodb');
-const request = require('request');
-const dbClient = require('../utils/db');
-const redisClient = require('../utils/redis');
-const { findUserByCreds, credsFromAuthHeaderString } = require('../utils/helpers');
+import { expect } from 'chai';
+import { ObjectID } from 'mongodb';
+import request from 'request';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
+import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
 
 const fPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 
 describe('FilesController', () => {
+  beforeEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
+  });
+
+  afterEach(async () => {
+    await dbClient.users.deleteMany({});
+    await dbClient.files.deleteMany({});
+  });
+
   it('checks the return of .postUpload() with valid user', (done) => {
     // Authorization: Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=
     // for user 'bob@dylan.com'
@@ -367,35 +378,35 @@ describe('FilesController', () => {
 
   });
 
-  it('checks the return of .getShow() with invalid user', () => {
+  it.skip('checks the return of .getShow() with invalid user', () => {
 
   });
 
-  it('checks the return of .getShow() with valid user, no file linked to userId', () => {
+  it.skip('checks the return of .getShow() with valid user, no file linked to userId', () => {
 
   });
 
-  it('checks the return of .getIndex() with valid user, parentId linked to user folder', () => {
+  it.skip('checks the return of .getIndex() with valid user, parentId linked to user folder', () => {
 
   });
 
-  it('checks the return of .getIndex() with valid user, parentId not linked to user folder', () => {
+  it.skip('checks the return of .getIndex() with valid user, parentId not linked to user folder', () => {
 
   });
 
-  it('checks the return of .getIndex() with valid user, parentId == 0', () => {
+  it.skip('checks the return of .getIndex() with valid user, parentId == 0', () => {
 
   });
 
-  it('checks the return of .getIndex() with valid user, parentId linked to user folder, with pagination', () => {
+  it.skip('checks the return of .getIndex() with valid user, parentId linked to user folder, with pagination', () => {
 
   });
 
-  it('checks the return of .getIndex() with valid user, parentId == 0, with pagination', () => {
+  it.skip('checks the return of .getIndex() with valid user, parentId == 0, with pagination', () => {
 
   });
 
-  it('checks the return of .getIndex() with invalid user', () => {
+  it.skip('checks the return of .getIndex() with invalid user', () => {
 
   });
 });
