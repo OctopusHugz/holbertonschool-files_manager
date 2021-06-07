@@ -47,7 +47,7 @@ class FilesController {
       });
       if (type === 'image') {
         await fs.promises.writeFile(localPath, clearData, { flag: 'w+', encoding: 'binary' });
-        fileQueue.add({ userId, fileId: resultObj.insertedId, localPath });
+        await fileQueue.add({ userId, fileId: resultObj.insertedId, localPath });
       }
     } else {
       resultObj = await dbClient.files.insertOne({
