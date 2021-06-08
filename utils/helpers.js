@@ -28,13 +28,10 @@ async function findFile(request, response, files, userId) {
       { userId: ObjectID(userId), _id: ObjectID(fileId) },
     ).toArray();
   }
-  if (fileArray.length === 0) return response.status(404).json({ error: 'Not found' });
-  return fileArray[0];
+  return fileArray.length > 0 ? fileArray[0] : null;
 }
 
 async function sanitizeReturnObj(response, file, userId) {
-  if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
-
   return response.json({
     id: file._id,
     userId,
