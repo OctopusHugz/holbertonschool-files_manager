@@ -5,14 +5,24 @@ import dbClient from '../utils/db';
 import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
 import app from '../server';
 
-const fPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 chai.use(chaiHttp);
+const fPath = process.env.FOLDER_PATH || '/tmp/files_manager';
+let insertedFileId;
+let insertedUserId;
 
 describe('FilesController', () => {
   beforeEach(async () => {
     await dbClient.users.deleteMany({});
     await dbClient.files.deleteMany({});
-    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
+    const userObj = await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
+    const resultObj = await dbClient.files.insertOne({
+      name: 'testFile.txt',
+      type: 'file',
+      isPublic: false,
+      parentId: 0,
+    });
+    insertedFileId = resultObj.ops[0]._id.toString();
+    insertedUserId = userObj.ops[0]._id.toString();
   });
 
   afterEach(async () => {
@@ -296,8 +306,31 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files/:id with valid user, file linked to userId', () => {
+  it('GET /files/:id with valid user, file linked to userId', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then((res) => {
+        const { token } = res.body;
+        const postHeaders = { 'X-Token': token };
 
+        chai.request(app)
+          .get(`/files/${insertedFileId}`)
+          .set(postHeaders)
+          .then((res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.id).to.equal(insertedFileId);
+            expect(res.body.userId).to.equal(insertedUserId);
+            expect(res.body.name).to.equal('testFile.txt');
+            expect(res.body.type).to.equal('file');
+            expect(res.body.isPublic).to.be.false;
+            expect(res.body.parentId).to.equal(0);
+            done();
+          });
+      });
   });
 
   it.skip('GET /files/:id with invalid user', () => {
