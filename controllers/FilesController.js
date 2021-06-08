@@ -67,6 +67,8 @@ class FilesController {
     const userId = await checkAuth(request);
     if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findFile(request, response, dbClient.files, userId);
+    if (!file) return response.status(404).json({ error: 'Not found' });
+    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
@@ -84,6 +86,8 @@ class FilesController {
     const userId = await checkAuth(request);
     if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findAndUpdateFile(request, response, dbClient.files, userId, true);
+    if (!file) return response.status(404).json({ error: 'Not found' });
+    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
@@ -91,6 +95,8 @@ class FilesController {
     const userId = await checkAuth(request);
     if (!userId) return response.status(401).json({ error: 'Unauthorized' });
     const file = await findAndUpdateFile(request, response, dbClient.files, userId, false);
+    if (!file) return response.status(404).json({ error: 'Not found' });
+    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return sanitizeReturnObj(response, file, userId);
   }
 
@@ -99,6 +105,8 @@ class FilesController {
     const userId = await getFileCheckAuth(request);
     const { size } = request.query;
     const file = await findFile(request, response, dbClient.files, userId);
+    if (!file) return response.status(404).json({ error: 'Not found' });
+    if (file.type === 'folder' && file.userId.toString() !== userId.toString()) return response.status(404).json({ error: 'Not found' });
     return checkFileAndReadContents(response, file, token, userId, size);
   }
 }
