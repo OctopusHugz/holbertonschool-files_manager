@@ -306,7 +306,7 @@ describe('FilesController', () => {
       });
   });
 
-  it('GET /files/:id with valid user, file linked to userId', (done) => {
+  it('GET /files/:id with valid user, file linked to :id, file linked to userId', (done) => {
     const headerData = {
       Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
     };
@@ -333,8 +333,40 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files/:id with invalid user', () => {
+  it('GET /files/:id with invalid token', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIchop=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then((res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.error).to.equal('Unauthorized');
+        done();
+      });
+  });
 
+  it('GET /files/:id with valid user, no file linked to :id', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then((res) => {
+        const { token } = res.body;
+        const postHeaders = { 'X-Token': token };
+
+        chai.request(app)
+          .get('/files/5f1e8896c7ba06511e683b25')
+          .set(postHeaders)
+          .then((res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.error).to.equal('Not found');
+            done();
+          });
+      });
   });
 
   it.skip('GET /files/:id with valid user, no file linked to userId', () => {
