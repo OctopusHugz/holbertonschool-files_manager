@@ -518,10 +518,37 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('PUT /files/:id/publish with no file linked to :id', (done) => {
+  it('PUT /files/:id/publish with no file linked to :id', (done) => {
+    chai.request(app)
+      .put('/files/5f1e8896c7ba06511e683b25/publish')
+      .set(postHeaders)
+      .then((res) => {
+        expect(res).to.have.status(404);
+        expect(res.body.error).to.equal('Not found');
+        done();
+      });
   });
 
-  it.skip('PUT /files/:id/publish with no file linked to :id for this user', (done) => {
+  it('PUT /files/:id/publish with no file linked to :id for this user', async () => {
+    let randomNewFolderId;
+    const randomNewFolder = {
+      userId: new ObjectID(),
+      name: 'randomNewFolder',
+      type: 'folder',
+      parentId: '0',
+    };
+    const createdFileDocs = await dbClient.files.insertOne(randomNewFolder);
+    if (createdFileDocs && createdFileDocs.ops.length > 0) {
+      randomNewFolderId = createdFileDocs.ops[0]._id.toString();
+    }
+
+    chai.request(app)
+      .put(`/files/${randomNewFolderId}/publish`)
+      .set(postHeaders)
+      .then((res) => {
+        expect(res).to.have.status(404);
+        expect(res.body.error).to.equal('Not found');
+      });
   });
 
   it.skip('PUT /files/:id/publish with correct :id of the owner - file not published yet', (done) => {
@@ -530,7 +557,7 @@ describe('FilesController', () => {
   it.skip('PUT /files/:id/publish with correct :id of the owner - file already published yet', (done) => {
   });
 
-  it('PUT /files/:id/unpublish invalid token user', (done) => {
+  it('PUT /files/:id/unpublish invalid token', (done) => {
     chai.request(app)
       .put(`/files/${insertedFileId}/unpublish`)
       .set(invalidTokenHeader)
@@ -541,10 +568,37 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('PUT /files/:id/unpublish with no file linked to :id', (done) => {
+  it('PUT /files/:id/unpublish with no file linked to :id', (done) => {
+    chai.request(app)
+      .put('/files/5f1e8896c7ba06511e683b25/unpublish')
+      .set(postHeaders)
+      .then((res) => {
+        expect(res).to.have.status(404);
+        expect(res.body.error).to.equal('Not found');
+        done();
+      });
   });
 
-  it.skip('PUT /files/:id/unpublish with no file linked to :id for this user', (done) => {
+  it('PUT /files/:id/unpublish with no file linked to :id for this user', async () => {
+    let randomNewFolderId;
+    const randomNewFolder = {
+      userId: new ObjectID(),
+      name: 'randomNewFolder',
+      type: 'folder',
+      parentId: '0',
+    };
+    const createdFileDocs = await dbClient.files.insertOne(randomNewFolder);
+    if (createdFileDocs && createdFileDocs.ops.length > 0) {
+      randomNewFolderId = createdFileDocs.ops[0]._id.toString();
+    }
+
+    chai.request(app)
+      .put(`/files/${randomNewFolderId}/unpublish`)
+      .set(postHeaders)
+      .then((res) => {
+        expect(res).to.have.status(404);
+        expect(res.body.error).to.equal('Not found');
+      });
   });
 
   it.skip('PUT /files/:id/unpublish with correct :id of the owner - file not published yet', (done) => {
