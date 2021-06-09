@@ -506,4 +506,50 @@ describe('FilesController', () => {
         done();
       });
   });
+
+  it('PUT /files/:id/publish invalid token', (done) => {
+    chai.request(app)
+      .put(`/files/${insertedFileId}/publish`)
+      .set(invalidTokenHeader)
+      .then(async (res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.error).to.equal('Unauthorized');
+        done();
+      });
+  });
+
+  it.skip('PUT /files/:id/publish with no file linked to :id', (done) => {
+  });
+
+  it.skip('PUT /files/:id/publish with no file linked to :id for this user', (done) => {
+  });
+
+  it.skip('PUT /files/:id/publish with correct :id of the owner - file not published yet', (done) => {
+  });
+
+  it.skip('PUT /files/:id/publish with correct :id of the owner - file already published yet', (done) => {
+  });
+
+  it('PUT /files/:id/unpublish invalid token user', (done) => {
+    chai.request(app)
+      .put(`/files/${insertedFileId}/unpublish`)
+      .set(invalidTokenHeader)
+      .then(async (res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.error).to.equal('Unauthorized');
+        done();
+      });
+  });
+
+  it.skip('PUT /files/:id/unpublish with no file linked to :id', (done) => {
+  });
+
+  it.skip('PUT /files/:id/unpublish with no file linked to :id for this user', (done) => {
+  });
+
+  it.skip('PUT /files/:id/unpublish with correct :id of the owner - file not published yet', (done) => {
+  });
+
+  it.skip('PUT /files/:id/unpublish with correct :id of the owner - file already published yet', (done) => {
+  });
 });
