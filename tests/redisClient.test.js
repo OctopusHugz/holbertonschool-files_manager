@@ -1,12 +1,19 @@
+/* eslint-disable */
 import { expect } from 'chai';
+import { RedisClient } from 'redis';
 import redisClient from '../utils/redis';
 
 describe('redisClient', () => {
-  it('checks the return of .isAlive()', () => {
+  it('checks the properties of redisClient', () => {
+    expect(redisClient.client).to.not.be.null;
+    expect(redisClient.client).to.be.instanceOf(RedisClient);
+  });
+
+  it('#isAlive()', () => {
     expect(redisClient.isAlive()).to.equal(true);
   });
 
-  it('checks the return of .get()', (done) => {
+  it('#get()', (done) => {
     (async () => {
       expect(await redisClient.get('randomKey1')).to.equal(null);
       await redisClient.set('Holberton', 'School', 1);
@@ -20,7 +27,7 @@ describe('redisClient', () => {
     })();
   });
 
-  it('checks the return of .set()', (done) => {
+  it('#set()', (done) => {
     (async () => {
       expect(await redisClient.get('randomKey1')).to.equal(null);
       await redisClient.set('Holberton', 'School', 3);
@@ -34,7 +41,7 @@ describe('redisClient', () => {
     })();
   }).timeout(11000);
 
-  it('checks the return of .del()', async () => {
+  it('#del()', async () => {
     await redisClient.set('Holberton', 'School', 5);
     await redisClient.del('Holberton');
     expect(await redisClient.get('Holberton')).to.equal(null);
