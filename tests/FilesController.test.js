@@ -334,13 +334,12 @@ describe('FilesController', () => {
   });
 
   it('GET /files/:id with invalid token', (done) => {
-    const headerData = {
-      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIchop=',
-    };
+    const postHeaders = { 'X-Token': 'f21fb953-16f9-46ed-8d9c-84c6450ec80f' };
+
     chai.request(app)
-      .get('/connect')
-      .set(headerData)
-      .then((res) => {
+      .get(`/files/${insertedFileId}`)
+      .set(postHeaders)
+      .then(async (res) => {
         expect(res).to.have.status(401);
         expect(res.body.error).to.equal('Unauthorized');
         done();
@@ -369,8 +368,40 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files/:id with valid user, no file linked to userId', () => {
+  it('GET /files/:id with valid user, file linked to :id, no file linked to userId', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then(async (res) => {
+        const { token } = res.body;
+        const postHeaders = { 'X-Token': token };
+        let randomNewFolderId;
 
+        const randomNewFolder = {
+          userId: new ObjectID(),
+          name: 'randomNewFolder',
+          type: 'folder',
+          parentId: '0',
+        };
+        const createdFileDocs = await dbClient.files.insertOne(randomNewFolder);
+        if (createdFileDocs && createdFileDocs.ops.length > 0) {
+          randomNewFolderId = createdFileDocs.ops[0]._id.toString();
+        }
+
+        chai.request(app)
+          .get(`/files/${randomNewFolderId}`)
+          .set(postHeaders)
+          .then((res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.error).to.equal('Not found');
+            done();
+          });
+      });
+    // insertOne new file with new ObjectID() as userId
+    // GET /files/insertedFileId
   });
 
   it.skip('GET /files with valid user, parentId linked to user folder', () => {
@@ -393,7 +424,16 @@ describe('FilesController', () => {
 
   });
 
-  it.skip('GET /files with invalid user', () => {
+  it('GET /files with invalid user', (done) => {
+    const postHeaders = { 'X-Token': 'f21fb953-16f9-46ed-8d9c-84c6450ec80f' };
 
+    chai.request(app)
+      .get('/files')
+      .set(postHeaders)
+      .then(async (res) => {
+        expect(res).to.have.status(401);
+        expect(res.body.error).to.equal('Unauthorized');
+        done();
+      });
   });
 });
