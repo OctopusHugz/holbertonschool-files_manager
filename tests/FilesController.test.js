@@ -547,12 +547,88 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files with valid user, parentId === 0, with pagination', (done) => {
+  it('GET /files with valid user, parentId === 0, with pagination', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then(async (res) => {
+        const { token } = res.body;
+        const postHeaders = { 'X-Token': token };
 
+        const addedFiles = [];
+        await dbClient.files.deleteMany({});
+        for (let i = 0; i < 22; i += 1) {
+          const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+          const item = {
+            userId: ObjectID(insertedUserId),
+            name: randomFileName,
+            type: 'folder',
+            parentId: '0',
+          };
+          const createdFileDocs = await dbClient.files.insertOne(item);
+          if (createdFileDocs && createdFileDocs.ops.length > 0) {
+            item.id = createdFileDocs.ops[0]._id.toString();
+          }
+          addedFiles.push(item);
+        }
+        chai.request(app)
+          .get('/files')
+          .set(postHeaders)
+          .query({ page: 1 })
+          .then((res) => {
+            expect(res).to.have.status(200);
+            expect(res.body).to.have.length(2);
+            expect(res.body[0].id).to.equal(addedFiles[20].id);
+            expect(res.body[0].userId.toString()).to.equal(addedFiles[20].userId.toString());
+            expect(res.body[0].name).to.equal(addedFiles[20].name);
+            expect(res.body[0].type).to.equal(addedFiles[20].type);
+            expect(res.body[0].parentId.toString()).to.equal(addedFiles[20].parentId.toString());
+            expect(res.body[1].id).to.equal(addedFiles[21].id);
+            done();
+          });
+      });
   });
 
-  it.skip('GET /files with valid user, parentId === 0, with pagination past total results requested', (done) => {
+  it('GET /files with valid user, parentId === 0, with pagination past total results requested', (done) => {
+    const headerData = {
+      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
+    };
+    chai.request(app)
+      .get('/connect')
+      .set(headerData)
+      .then(async (res) => {
+        const { token } = res.body;
+        const postHeaders = { 'X-Token': token };
 
+        const addedFiles = [];
+        await dbClient.files.deleteMany({});
+        for (let i = 0; i < 22; i += 1) {
+          const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+          const item = {
+            userId: ObjectID(insertedUserId),
+            name: randomFileName,
+            type: 'folder',
+            parentId: '0',
+          };
+          const createdFileDocs = await dbClient.files.insertOne(item);
+          if (createdFileDocs && createdFileDocs.ops.length > 0) {
+            item.id = createdFileDocs.ops[0]._id.toString();
+          }
+          addedFiles.push(item);
+        }
+        chai.request(app)
+          .get('/files')
+          .set(postHeaders)
+          .query({ page: 13 })
+          .then((res) => {
+            expect(res).to.have.status(200);
+            expect(res.body).to.have.length(0);
+            done();
+          });
+      });
   });
 
   it('GET /files with invalid user', (done) => {
