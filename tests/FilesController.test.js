@@ -1,3 +1,4 @@
+/* eslint-disable */
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
 import { ObjectID } from 'mongodb';
