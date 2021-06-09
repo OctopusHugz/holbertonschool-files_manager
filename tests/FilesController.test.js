@@ -2,6 +2,8 @@
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
 import { ObjectID } from 'mongodb';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import dbClient from '../utils/db';
 import { findUserByCreds, credsFromAuthHeaderString, getRandomInt } from '../utils/helpers';
 import app from '../server';
@@ -10,6 +12,7 @@ chai.use(chaiHttp);
 const fPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 const headerData = { Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=' };
 const invalidTokenHeader = { 'X-Token': 'f21fb953-16f9-46ed-8d9c-84c6450ec80f' };
+const folderTmpFilesManagerPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 let userObj;
 let fileObj;
 let publicFileObj;
@@ -21,14 +24,34 @@ let insertedPublicFile;
 let insertedPublicFileId;
 let token;
 let postHeaders;
+let initialFileId = null;
+let initialFileContent = null;
+
+const fctRandomString = () => {
+  return Math.random().toString(36).substring(2, 15);
+}
+const fctCreateTmp = () => {
+  if (!fs.existsSync(folderTmpFilesManagerPath)) {
+      fs.mkdirSync(folderTmpFilesManagerPath);
+  }
+}
+const fctRemoveTmp = () => {
+  if (fs.existsSync(folderTmpFilesManagerPath)) {
+      fs.readdirSync(`${folderTmpFilesManagerPath}/`).forEach((i) => {
+          fs.unlinkSync(`${folderTmpFilesManagerPath}/${i}`)
+      })
+  }
+}
 
 describe('FilesController', () => {
   beforeEach(async () => {
     await dbClient.users.deleteMany({});
     await dbClient.files.deleteMany({});
+
     userObj = await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
     [insertedUser] = userObj.ops;
     insertedUserId = userObj.ops[0]._id.toString();
+
     fileObj = await dbClient.files.insertOne({
       userId: ObjectID(insertedUserId),
       name: 'testFile.txt',
@@ -38,23 +61,43 @@ describe('FilesController', () => {
     });
     [insertedFile] = fileObj.ops;
     insertedFileId = fileObj.ops[0]._id.toString();
+
     publicFileObj = await dbClient.files.insertOne({
       userId: ObjectID(insertedUserId),
-      name: 'testFile.txt',
+      name: 'publicTestFile.txt',
       type: 'file',
       isPublic: true,
       parentId: 0,
     });
     [insertedPublicFile] = publicFileObj.ops;
     insertedPublicFileId = publicFileObj.ops[0]._id.toString();
+
     return new Promise((resolve) => {
+      fctRemoveTmp();
       chai.request(app)
         .get('/connect')
         .set(headerData)
-        .then((res) => {
+        .then(async (res) => {
           token = res.body.token;
           postHeaders = { 'X-Token': token };
           expect(res).to.have.status(200);
+          fctCreateTmp();
+          const fileLocalPath = `${folderTmpFilesManagerPath}/${uuidv4()}`;
+          initialFileContent = `Hello-${uuidv4()}`;
+          fs.writeFileSync(fileLocalPath, initialFileContent);
+
+          const initialFile = {
+              userId: ObjectID(insertedUserId),
+              name: fctRandomString(),
+              type: "file",
+              parentId: '0',
+              isPublic: false,
+              localPath: fileLocalPath
+          };
+          const createdFileDocs = await dbClient.files.insertOne(initialFile);
+          if (createdFileDocs && createdFileDocs.ops.length > 0) {
+              initialFileId = createdFileDocs.ops[0]._id.toString();
+          }
           resolve();
         });
     });
@@ -431,16 +474,16 @@ describe('FilesController', () => {
         .then((res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.length(20);
-          expect(res.body[2].id).to.equal(newFolderId);
-          expect(res.body[2].userId.toString()).to.equal(newFolder.userId.toString());
-          expect(res.body[2].name).to.equal(newFolder.name);
-          expect(res.body[2].type).to.equal(newFolder.type);
-          expect(res.body[2].parentId.toString()).to.equal(newFolder.parentId.toString());
-          expect(res.body[3].id).to.equal(addedFiles[0].id);
-          expect(res.body[3].userId.toString()).to.equal(addedFiles[0].userId.toString());
-          expect(res.body[3].name).to.equal(addedFiles[0].name);
-          expect(res.body[3].type).to.equal(addedFiles[0].type);
-          expect(res.body[3].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
+          expect(res.body[3].id).to.equal(newFolderId);
+          expect(res.body[3].userId.toString()).to.equal(newFolder.userId.toString());
+          expect(res.body[3].name).to.equal(newFolder.name);
+          expect(res.body[3].type).to.equal(newFolder.type);
+          expect(res.body[3].parentId.toString()).to.equal(newFolder.parentId.toString());
+          expect(res.body[4].id).to.equal(addedFiles[0].id);
+          expect(res.body[4].userId.toString()).to.equal(addedFiles[0].userId.toString());
+          expect(res.body[4].name).to.equal(addedFiles[0].name);
+          expect(res.body[4].type).to.equal(addedFiles[0].type);
+          expect(res.body[4].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
           done();
         });
     });
@@ -603,8 +646,8 @@ describe('FilesController', () => {
         const file = res.body;
         expect(file.id).to.equal(insertedPublicFileId);
         expect(file.userId).to.equal(insertedUserId);
-        expect(file.name).to.equal(insertedFile.name);
-        expect(file.type).to.equal(insertedFile.type);
+        expect(file.name).to.equal(insertedPublicFile.name);
+        expect(file.type).to.equal(insertedPublicFile.type);
         expect(file.isPublic).to.be.true;
         const updatedFileArray = await dbClient.files.find(ObjectID(file.id)).toArray();
         const updatedFile = updatedFileArray[0];
@@ -689,8 +732,8 @@ describe('FilesController', () => {
         const file = res.body;
         expect(file.id).to.equal(insertedPublicFileId);
         expect(file.userId).to.equal(insertedUserId);
-        expect(file.name).to.equal(insertedFile.name);
-        expect(file.type).to.equal(insertedFile.type);
+        expect(file.name).to.equal(insertedPublicFile.name);
+        expect(file.type).to.equal(insertedPublicFile.type);
         expect(file.isPublic).to.be.false;
         const updatedFileArray = await dbClient.files.find(ObjectID(file.id)).toArray();
         const updatedFile = updatedFileArray[0];
@@ -722,12 +765,47 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files/:id/data with an unpublished file linked to :id but user authenticated and not owner', (done) => {
-
+  it('GET /files/:id/data with an unpublished file linked to :id but user authenticated and not owner', async () => {
+    const unownedFileObj = await dbClient.files.insertOne({
+      userId: new ObjectID(),
+      name: 'unownedTestFile.txt',
+      type: 'file',
+      isPublic: false,
+      parentId: 0,
+    });
+    const [unownedInsertedFile] = unownedFileObj.ops;
+    const unownedInsertedFileId = unownedFileObj.ops[0]._id.toString();
+    chai.request(app)
+      .get(`/files/${unownedInsertedFileId}/data`)
+      .set(postHeaders)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+      });
   });
 
-  it.skip('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
-
+  it('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
+    chai.request(app)
+      .get(`/files/${initialFileId}/data`)
+      .set(postHeaders)
+      .buffer()
+      .parse((res, cb) => {
+          res.setEncoding("binary");
+          res.data = "";
+          res.on("data", (chunk) => {
+              res.data += chunk;
+          });
+          res.on("end", () => {
+              cb(null, new Buffer.from(res.data, "binary"));
+          });
+      })
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(200);
+        expect(res.body.toString()).to.equal(initialFileContent);
+        done();
+      });
   });
 
   it('GET /files/:id/data with a published file linked to :id and user unauthenticated', (done) => {
@@ -750,27 +828,88 @@ describe('FilesController', () => {
 
   });
 
-  it.skip('GET /files/:id/data with an unpublished folder linked to :id but user unauthenticated', (done) => {
-
+  it('GET /files/:id/data with an unpublished folder linked to :id but user unauthenticated', async () => {
+    const unownedFileObj = await dbClient.files.insertOne({
+      userId: new ObjectID(),
+      name: 'images',
+      type: 'folder',
+      isPublic: false,
+      parentId: 0,
+    });
+    const unownedInsertedFileId = unownedFileObj.ops[0]._id.toString();
+    chai.request(app)
+      .get(`/files/${unownedInsertedFileId}/data`)
+      .set(invalidTokenHeader)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+      });
   });
 
-  it.skip('GET /files/:id/data with an unpublished folder linked to :id but user authenticated and not owner', (done) => {
-
+  it('GET /files/:id/data with an unpublished folder linked to :id but user authenticated and not owner', async () => {
+    const unownedFileObj = await dbClient.files.insertOne({
+      userId: new ObjectID(),
+      name: 'images',
+      type: 'folder',
+      isPublic: false,
+      parentId: 0,
+    });
+    const unownedInsertedFileId = unownedFileObj.ops[0]._id.toString();
+    chai.request(app)
+      .get(`/files/${unownedInsertedFileId}/data`)
+      .set(postHeaders)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+      });
   });
 
   it.skip('GET /files/:id/data with an unpublished folder linked to :id and user authenticated and owner', (done) => {
 
   });
 
-  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user unauthenticated', (done) => {
-
+  it('GET /files/:id/data with an unpublished file not present locally linked to :id and user unauthenticated', (done) => {
+    chai.request(app)
+      .get(`/files/${insertedFileId}/data`)
+      .set(invalidTokenHeader)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+        done();
+      });
   });
 
-  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated but not owner', (done) => {
-
+  it('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated but not owner', async () => {
+    const unownedFileObj = await dbClient.files.insertOne({
+      userId: new ObjectID(),
+      name: 'unownedTestFile.txt',
+      type: 'file',
+      isPublic: false,
+      parentId: 0,
+    });
+    const unownedInsertedFileId = unownedFileObj.ops[0]._id.toString();
+    chai.request(app)
+      .get(`/files/${unownedInsertedFileId}/data`)
+      .set(postHeaders)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+      });
   });
 
-  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated and owner', (done) => {
-
+  it('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated and owner', (done) => {
+    chai.request(app)
+      .get(`/files/${insertedFileId}/data`)
+      .set(postHeaders)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+        done();
+      });
   });
 });
