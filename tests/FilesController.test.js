@@ -11,10 +11,13 @@ const headerData = { Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=' };
 const invalidTokenHeader = { 'X-Token': 'f21fb953-16f9-46ed-8d9c-84c6450ec80f' };
 let userObj;
 let fileObj;
+let publicFileObj;
 let insertedFile;
 let insertedUser;
 let insertedFileId;
 let insertedUserId;
+let insertedPublicFile;
+let insertedPublicFileId;
 let token;
 let postHeaders;
 
@@ -34,6 +37,15 @@ describe('FilesController', () => {
     });
     [insertedFile] = fileObj.ops;
     insertedFileId = fileObj.ops[0]._id.toString();
+    publicFileObj = await dbClient.files.insertOne({
+      userId: ObjectID(insertedUserId),
+      name: 'testFile.txt',
+      type: 'file',
+      isPublic: true,
+      parentId: 0,
+    });
+    [insertedPublicFile] = publicFileObj.ops;
+    insertedPublicFileId = publicFileObj.ops[0]._id.toString();
     return new Promise((resolve) => {
       chai.request(app)
         .get('/connect')
@@ -418,16 +430,16 @@ describe('FilesController', () => {
         .then((res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.have.length(20);
-          expect(res.body[1].id).to.equal(newFolderId);
-          expect(res.body[1].userId.toString()).to.equal(newFolder.userId.toString());
-          expect(res.body[1].name).to.equal(newFolder.name);
-          expect(res.body[1].type).to.equal(newFolder.type);
-          expect(res.body[1].parentId.toString()).to.equal(newFolder.parentId.toString());
-          expect(res.body[2].id).to.equal(addedFiles[0].id);
-          expect(res.body[2].userId.toString()).to.equal(addedFiles[0].userId.toString());
-          expect(res.body[2].name).to.equal(addedFiles[0].name);
-          expect(res.body[2].type).to.equal(addedFiles[0].type);
-          expect(res.body[2].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
+          expect(res.body[2].id).to.equal(newFolderId);
+          expect(res.body[2].userId.toString()).to.equal(newFolder.userId.toString());
+          expect(res.body[2].name).to.equal(newFolder.name);
+          expect(res.body[2].type).to.equal(newFolder.type);
+          expect(res.body[2].parentId.toString()).to.equal(newFolder.parentId.toString());
+          expect(res.body[3].id).to.equal(addedFiles[0].id);
+          expect(res.body[3].userId.toString()).to.equal(addedFiles[0].userId.toString());
+          expect(res.body[3].name).to.equal(addedFiles[0].name);
+          expect(res.body[3].type).to.equal(addedFiles[0].type);
+          expect(res.body[3].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
           done();
         });
     });
@@ -579,8 +591,25 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('PUT /files/:id/publish with correct :id of the owner - file already published', (done) => {
-    // Create file with isPublic: true
+  it('PUT /files/:id/publish with correct :id of the owner - file already published', (done) => {
+    chai.request(app)
+      .put(`/files/${insertedPublicFileId}/publish`)
+      .set(postHeaders)
+      .end(async (err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(200);
+
+        const file = res.body;
+        expect(file.id).to.equal(insertedPublicFileId);
+        expect(file.userId).to.equal(insertedUserId);
+        expect(file.name).to.equal(insertedFile.name);
+        expect(file.type).to.equal(insertedFile.type);
+        expect(file.isPublic).to.be.true;
+        const updatedFileArray = await dbClient.files.find(ObjectID(file.id)).toArray();
+        const updatedFile = updatedFileArray[0];
+        expect(updatedFile.isPublic).to.be.true;
+        done();
+      });
   });
 
   it('PUT /files/:id/unpublish invalid token', (done) => {
@@ -648,7 +677,24 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('PUT /files/:id/unpublish with correct :id of the owner - file already published', (done) => {
-    // Create file with isPublic: true
+  it('PUT /files/:id/unpublish with correct :id of the owner - file already published', (done) => {
+    chai.request(app)
+      .put(`/files/${insertedPublicFileId}/unpublish`)
+      .set(postHeaders)
+      .end(async (err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(200);
+
+        const file = res.body;
+        expect(file.id).to.equal(insertedPublicFileId);
+        expect(file.userId).to.equal(insertedUserId);
+        expect(file.name).to.equal(insertedFile.name);
+        expect(file.type).to.equal(insertedFile.type);
+        expect(file.isPublic).to.be.false;
+        const updatedFileArray = await dbClient.files.find(ObjectID(file.id)).toArray();
+        const updatedFile = updatedFileArray[0];
+        expect(updatedFile.isPublic).to.be.false;
+        done();
+      });
   });
 });
