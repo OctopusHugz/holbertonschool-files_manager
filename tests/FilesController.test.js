@@ -698,4 +698,63 @@ describe('FilesController', () => {
         done();
       });
   });
+
+  it('GET /files/:id/data with no file linked to :id', (done) => {
+    chai.request(app)
+      .get('/files/5f1e8896c7ba06511e683b25/data')
+      .set(postHeaders)
+      .then((res) => {
+        expect(res).to.have.status(404);
+        expect(res.body.error).to.equal('Not found');
+        done();
+      });
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file linked to :id but user unauthenticated', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file linked to :id but user authenticated and not owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with a published file linked to :id and user unauthenticated', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with a published file linked to :id and user authenticated but not owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with a published file linked to :id and user authenticated and owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished folder linked to :id but user unauthenticated', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished folder linked to :id but user authenticated and not owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished folder linked to :id and user authenticated and owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user unauthenticated', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated but not owner', (done) => {
+
+  });
+
+  it.skip('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated and owner', (done) => {
+
+  });
 });
