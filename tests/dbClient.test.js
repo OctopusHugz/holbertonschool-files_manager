@@ -4,8 +4,8 @@ import dbClient from '../utils/db';
 
 describe('dbClient', () => {
   beforeEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
+    await dbClient.users.deleteMany({}).catch(console.error);
+    await dbClient.files.deleteMany({}).catch(console.error);
   });
 
   afterEach(async () => {
@@ -21,11 +21,11 @@ describe('dbClient', () => {
     expect(dbClient.db).to.be.instanceOf(Db);
   });
 
-  it('checks the return of .isAlive()', () => {
+  it('#isAlive()', () => {
     expect(dbClient.isAlive()).to.equal(true);
   });
 
-  it('checks the return of .nbUsers()', async () => {
+  it('#nbUsers()', async () => {
     await dbClient.users.insertMany([
       { email: 'me@me.com' },
       { email: 'me2@me.com' },
@@ -33,7 +33,7 @@ describe('dbClient', () => {
     expect(await dbClient.nbUsers()).to.equal(2);
   });
 
-  it('checks the return of .nbFiles()', async () => {
+  it('#nbFiles()', async () => {
     await dbClient.files.insertMany([
       { name: 'file 1' },
       { name: 'file 2' },
