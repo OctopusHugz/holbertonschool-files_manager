@@ -7,8 +7,8 @@ chai.use(chaiHttp);
 
 describe('AppController', () => {
   beforeEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
+    await dbClient.users.deleteMany({}).catch(console.error);
+    await dbClient.files.deleteMany({}).catch(console.error);
     await dbClient.users.insertMany([
       { email: 'me@me.com' },
       { email: 'me2@me.com' },

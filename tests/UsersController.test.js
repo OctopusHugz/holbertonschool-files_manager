@@ -16,8 +16,8 @@ let token;
 
 describe('UsersController', () => {
   beforeEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
+    await dbClient.users.deleteMany({}).catch(console.error);
+    await dbClient.files.deleteMany({}).catch(console.error);
     await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
   });
 
