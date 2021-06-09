@@ -710,8 +710,16 @@ describe('FilesController', () => {
       });
   });
 
-  it.skip('GET /files/:id/data with an unpublished file linked to :id but user unauthenticated', (done) => {
-
+  it('GET /files/:id/data with an unpublished file linked to :id but user unauthenticated', (done) => {
+    chai.request(app)
+      .get(`/files/${insertedFileId}/data`)
+      .set(invalidTokenHeader)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+        done();
+      });
   });
 
   it.skip('GET /files/:id/data with an unpublished file linked to :id but user authenticated and not owner', (done) => {
@@ -722,8 +730,16 @@ describe('FilesController', () => {
 
   });
 
-  it.skip('GET /files/:id/data with a published file linked to :id and user unauthenticated', (done) => {
-
+  it('GET /files/:id/data with a published file linked to :id and user unauthenticated', (done) => {
+    chai.request(app)
+      .get(`/files/${insertedPublicFileId}/data`)
+      .set(invalidTokenHeader)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res).to.have.status(404);
+        expect(res.body).to.deep.equal({ error: 'Not found' });
+        done();
+      });
   });
 
   it.skip('GET /files/:id/data with a published file linked to :id and user authenticated but not owner', (done) => {
