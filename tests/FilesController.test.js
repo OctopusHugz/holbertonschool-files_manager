@@ -342,193 +342,164 @@ describe('FilesController', () => {
   });
 
   it('GET /files with valid user, with a wrong parentId and no page', (done) => {
-    const headerData = {
-      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
-    };
-    chai.request(app)
-      .get('/connect')
-      .set(headerData)
-      .then(async (res) => {
-        const { token } = res.body;
-        const postHeaders = { 'X-Token': token };
-
-        const addedFiles = [];
-        const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
-        for (let i = 0; i < 22; i += 1) {
-          const item = {
-            userId: ObjectID(insertedUserId),
-            name: randomFileName,
-            type: 'folder',
-            parentId: 0,
-          };
-          const createdFileDocs = await dbClient.files.insertOne(item);
-          if (createdFileDocs && createdFileDocs.ops.length > 0) {
-            item.id = createdFileDocs.ops[0]._id.toString();
-          }
-          addedFiles.push(item);
-        }
-        chai.request(app)
-          .get('/files')
-          .set(postHeaders)
-          .query({ parentId: new ObjectID().toString() })
-          .then((res) => {
-            expect(res).to.have.status(200);
-            expect(res.body).to.have.length(0);
-            done();
-          });
-      });
-  });
-
-  it('GET /files with valid user, with a valid parentId and no page', (done) => {
-    const headerData = {
-      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
-    };
-    chai.request(app)
-      .get('/connect')
-      .set(headerData)
-      .then(async (res) => {
-        const { token } = res.body;
-        const postHeaders = { 'X-Token': token };
-
-        const addedFiles = [];
+    const addedFiles = [];
+    const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+    const insertFiles = async () => {
+      await dbClient.files.deleteMany({});
+      for (let i = 0; i < 22; i += 1) {
         const item = {
           userId: ObjectID(insertedUserId),
-          name: 'newFolder',
+          name: randomFileName,
           type: 'folder',
           parentId: 0,
         };
-        const newFolderDoc = await dbClient.files.insertOne(item);
-        let newFolder;
-        let newFolderId;
-        if (newFolderDoc && newFolderDoc.ops.length > 0) {
-          [newFolder] = newFolderDoc.ops;
-          newFolderId = newFolderDoc.ops[0]._id.toString();
+        const createdFileDocs = await dbClient.files.insertOne(item);
+        if (createdFileDocs && createdFileDocs.ops.length > 0) {
+          item.id = createdFileDocs.ops[0]._id.toString();
         }
-        for (let i = 0; i < 22; i += 1) {
-          const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
-          const item = {
-            userId: ObjectID(insertedUserId),
-            name: randomFileName,
-            type: 'folder',
-            parentId: ObjectID(newFolderId),
-          };
-          const createdFileDocs = await dbClient.files.insertOne(item);
-          if (createdFileDocs && createdFileDocs.ops.length > 0) {
-            item.id = createdFileDocs.ops[0]._id.toString();
-          }
-          addedFiles.push(item);
+        addedFiles.push(item);
+      }
+    };
+    insertFiles().then(() => {
+      chai.request(app)
+        .get('/files')
+        .set(postHeaders)
+        .query({ parentId: new ObjectID().toString() })
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.have.length(0);
+          done();
+        });
+    });
+  });
+
+  it('GET /files with valid user, with a valid parentId and no page', (done) => {
+    const addedFiles = [];
+    let newFolder;
+    let newFolderId;
+    const insertFiles = async () => {
+      const item = {
+        userId: ObjectID(insertedUserId),
+        name: 'newFolder',
+        type: 'folder',
+        parentId: 0,
+      };
+      const newFolderDoc = await dbClient.files.insertOne(item);
+      if (newFolderDoc && newFolderDoc.ops.length > 0) {
+        [newFolder] = newFolderDoc.ops;
+        newFolderId = newFolderDoc.ops[0]._id.toString();
+      }
+      for (let i = 0; i < 22; i += 1) {
+        const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+        const item = {
+          userId: ObjectID(insertedUserId),
+          name: randomFileName,
+          type: 'folder',
+          parentId: ObjectID(newFolderId),
+        };
+        const createdFileDocs = await dbClient.files.insertOne(item);
+        if (createdFileDocs && createdFileDocs.ops.length > 0) {
+          item.id = createdFileDocs.ops[0]._id.toString();
         }
-        chai.request(app)
-          .get('/files')
-          .set(postHeaders)
-          .then((res) => {
-            expect(res).to.have.status(200);
-            expect(res.body).to.have.length(20);
-            expect(res.body[0].id).to.equal(newFolderId);
-            expect(res.body[0].userId.toString()).to.equal(newFolder.userId.toString());
-            expect(res.body[0].name).to.equal(newFolder.name);
-            expect(res.body[0].type).to.equal(newFolder.type);
-            expect(res.body[0].parentId.toString()).to.equal(newFolder.parentId.toString());
-            expect(res.body[1].id).to.equal(addedFiles[0].id);
-            expect(res.body[1].userId.toString()).to.equal(addedFiles[0].userId.toString());
-            expect(res.body[1].name).to.equal(addedFiles[0].name);
-            expect(res.body[1].type).to.equal(addedFiles[0].type);
-            expect(res.body[1].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
-            done();
-          });
-      });
+        addedFiles.push(item);
+      }
+    };
+    insertFiles().then(() => {
+      chai.request(app)
+        .get('/files')
+        .set(postHeaders)
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.have.length(20);
+          expect(res.body[0].id).to.equal(newFolderId);
+          expect(res.body[0].userId.toString()).to.equal(newFolder.userId.toString());
+          expect(res.body[0].name).to.equal(newFolder.name);
+          expect(res.body[0].type).to.equal(newFolder.type);
+          expect(res.body[0].parentId.toString()).to.equal(newFolder.parentId.toString());
+          expect(res.body[1].id).to.equal(addedFiles[0].id);
+          expect(res.body[1].userId.toString()).to.equal(addedFiles[0].userId.toString());
+          expect(res.body[1].name).to.equal(addedFiles[0].name);
+          expect(res.body[1].type).to.equal(addedFiles[0].type);
+          expect(res.body[1].parentId.toString()).to.equal(addedFiles[0].parentId.toString());
+          done();
+        });
+    });
   });
 
   it('GET /files with valid user, parentId === 0, with pagination', (done) => {
-    const headerData = {
-      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
-    };
-    chai.request(app)
-      .get('/connect')
-      .set(headerData)
-      .then(async (res) => {
-        const { token } = res.body;
-        const postHeaders = { 'X-Token': token };
-
-        const addedFiles = [];
-        await dbClient.files.deleteMany({});
-        for (let i = 0; i < 22; i += 1) {
-          const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
-          const item = {
-            userId: ObjectID(insertedUserId),
-            name: randomFileName,
-            type: 'folder',
-            parentId: '0',
-          };
-          const createdFileDocs = await dbClient.files.insertOne(item);
-          if (createdFileDocs && createdFileDocs.ops.length > 0) {
-            item.id = createdFileDocs.ops[0]._id.toString();
-          }
-          addedFiles.push(item);
+    const addedFiles = [];
+    const insertFiles = async () => {
+      await dbClient.files.deleteMany({});
+      for (let i = 0; i < 22; i += 1) {
+        const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+        const item = {
+          userId: ObjectID(insertedUserId),
+          name: randomFileName,
+          type: 'folder',
+          parentId: '0',
+        };
+        const createdFileDocs = await dbClient.files.insertOne(item);
+        if (createdFileDocs && createdFileDocs.ops.length > 0) {
+          item.id = createdFileDocs.ops[0]._id.toString();
         }
-        chai.request(app)
-          .get('/files')
-          .set(postHeaders)
-          .query({ page: 1 })
-          .then((res) => {
-            expect(res).to.have.status(200);
-            expect(res.body).to.have.length(2);
-            expect(res.body[0].id).to.equal(addedFiles[20].id);
-            expect(res.body[0].userId.toString()).to.equal(addedFiles[20].userId.toString());
-            expect(res.body[0].name).to.equal(addedFiles[20].name);
-            expect(res.body[0].type).to.equal(addedFiles[20].type);
-            expect(res.body[0].parentId.toString()).to.equal(addedFiles[20].parentId.toString());
-            expect(res.body[1].id).to.equal(addedFiles[21].id);
-            done();
-          });
-      });
+        addedFiles.push(item);
+      }
+    };
+    insertFiles().then(() => {
+      chai.request(app)
+        .get('/files')
+        .set(postHeaders)
+        .query({ page: 1 })
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.have.length(2);
+          expect(res.body[0].id).to.equal(addedFiles[20].id);
+          expect(res.body[0].userId.toString()).to.equal(addedFiles[20].userId.toString());
+          expect(res.body[0].name).to.equal(addedFiles[20].name);
+          expect(res.body[0].type).to.equal(addedFiles[20].type);
+          expect(res.body[0].parentId.toString()).to.equal(addedFiles[20].parentId.toString());
+          expect(res.body[1].id).to.equal(addedFiles[21].id);
+          done();
+        });
+    });
   });
 
   it('GET /files with valid user, parentId === 0, with pagination past total results requested', (done) => {
-    const headerData = {
-      Authorization: 'Basic Ym9iQGR5bGFuLmNvbTp0b3RvMTIzNCE=',
-    };
-    chai.request(app)
-      .get('/connect')
-      .set(headerData)
-      .then(async (res) => {
-        const { token } = res.body;
-        const postHeaders = { 'X-Token': token };
-
-        const addedFiles = [];
-        await dbClient.files.deleteMany({});
-        for (let i = 0; i < 22; i += 1) {
-          const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
-          const item = {
-            userId: ObjectID(insertedUserId),
-            name: randomFileName,
-            type: 'folder',
-            parentId: '0',
-          };
-          const createdFileDocs = await dbClient.files.insertOne(item);
-          if (createdFileDocs && createdFileDocs.ops.length > 0) {
-            item.id = createdFileDocs.ops[0]._id.toString();
-          }
-          addedFiles.push(item);
+    const addedFiles = [];
+    const insertFiles = async () => {
+      await dbClient.files.deleteMany({});
+      for (let i = 0; i < 22; i += 1) {
+        const randomFileName = `${getRandomInt(1, 99999999)}.txt`;
+        const item = {
+          userId: ObjectID(insertedUserId),
+          name: randomFileName,
+          type: 'folder',
+          parentId: '0',
+        };
+        const createdFileDocs = await dbClient.files.insertOne(item);
+        if (createdFileDocs && createdFileDocs.ops.length > 0) {
+          item.id = createdFileDocs.ops[0]._id.toString();
         }
-        chai.request(app)
-          .get('/files')
-          .set(postHeaders)
-          .query({ page: 13 })
-          .then((res) => {
-            expect(res).to.have.status(200);
-            expect(res.body).to.have.length(0);
-            done();
-          });
-      });
+        addedFiles.push(item);
+      }
+    };
+    insertFiles().then(() => {
+      chai.request(app)
+        .get('/files')
+        .set(postHeaders)
+        .query({ page: 13 })
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.have.length(0);
+          done();
+        });
+    });
   });
 
   it('GET /files with invalid user', (done) => {
-    const postHeaders = { 'X-Token': 'f21fb953-16f9-46ed-8d9c-84c6450ec80f' };
-
     chai.request(app)
       .get('/files')
-      .set(postHeaders)
+      .set(invalidTokenHeader)
       .then(async (res) => {
         expect(res).to.have.status(401);
         expect(res.body.error).to.equal('Unauthorized');
