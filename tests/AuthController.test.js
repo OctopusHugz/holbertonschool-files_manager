@@ -1,23 +1,19 @@
+/* eslint-disable */
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
 import app from '../server';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
-import { findUserByCreds, credsFromAuthHeaderString } from '../utils/helpers';
+import {
+  findUserByCreds, credsFromAuthHeaderString, deleteAndCreateAuthTestData, deleteAllUsersAndFiles,
+} from '../utils/helpers';
 
 chai.use(chaiHttp);
 
 describe('AuthController', () => {
-  beforeEach(async () => {
-    await dbClient.users.deleteMany({}).catch(console.error);
-    await dbClient.files.deleteMany({}).catch(console.error);
-    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
-  });
+  beforeEach(async () => { await deleteAndCreateAuthTestData(); });
 
-  afterEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
-  });
+  afterEach(async () => { await deleteAllUsersAndFiles(); });
 
   it('GET /connect with valid user', async () => {
     const headerData = {

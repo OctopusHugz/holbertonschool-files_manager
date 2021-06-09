@@ -6,7 +6,7 @@ import chaiHttp from 'chai-http';
 import app from '../server';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import { getRandomInt, credsFromAuthHeaderString, findUserByCreds } from '../utils/helpers';
+import { getRandomInt, credsFromAuthHeaderString, findUserByCreds, deleteAndCreateAuthTestData, deleteAllUsersAndFiles } from '../utils/helpers';
 
 chai.use(chaiHttp);
 const requester = chai.request(app).keepOpen();
@@ -15,16 +15,9 @@ const randomPassword = getRandomInt(1, 99999999);
 let token;
 
 describe('UsersController', () => {
-  beforeEach(async () => {
-    await dbClient.users.deleteMany({}).catch(console.error);
-    await dbClient.files.deleteMany({}).catch(console.error);
-    await dbClient.users.insertOne({ email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' });
-  });
+  beforeEach(async () => { await deleteAndCreateAuthTestData(); });
 
-  afterEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
-  });
+  afterEach(async () => { await deleteAllUsersAndFiles(); });
 
   after(() => {
     requester.close();

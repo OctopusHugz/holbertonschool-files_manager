@@ -1,31 +1,14 @@
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
-import dbClient from '../utils/db';
 import app from '../server';
+import { deleteAndCreateAppTestData, deleteAllUsersAndFiles } from '../utils/helpers';
 
 chai.use(chaiHttp);
 
 describe('AppController', () => {
-  beforeEach(async () => {
-    await dbClient.users.deleteMany({}).catch(console.error);
-    await dbClient.files.deleteMany({}).catch(console.error);
-    await dbClient.users.insertMany([
-      { email: 'me@me.com' },
-      { email: 'me2@me.com' },
-      { email: 'bob@dylan.com', password: '89cad29e3ebc1035b29b1478a8e70854f25fa2b2' },
-    ]);
-    await dbClient.files.insertMany([
-      { name: 'file 1' },
-      { name: 'file 2' },
-      { name: 'file 3' },
-      { name: 'file 4' },
-    ]);
-  });
+  beforeEach(async () => { await deleteAndCreateAppTestData(); });
 
-  afterEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
-  });
+  afterEach(async () => { await deleteAllUsersAndFiles(); });
 
   it('GET /status', (done) => {
     chai.request(app)

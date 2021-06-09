@@ -5,7 +5,7 @@ import { ObjectID } from 'mongodb';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import dbClient from '../utils/db';
-import { findUserByCreds, credsFromAuthHeaderString, getRandomInt } from '../utils/helpers';
+import { findUserByCreds, credsFromAuthHeaderString, getRandomInt, deleteAllUsersAndFiles } from '../utils/helpers';
 import app from '../server';
 
 chai.use(chaiHttp);
@@ -133,10 +133,7 @@ describe('FilesController', () => {
     });
   });
 
-  afterEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
-  });
+  afterEach(async () => { await deleteAllUsersAndFiles(); });
 
   it('POST /files with valid user', (done) => {
     const bodyData = { name: 'myText.txt', type: 'file', data: 'SGVsbG8gV2Vic3RhY2shCg==' };

@@ -1,17 +1,12 @@
 import { expect } from 'chai';
 import { MongoClient, Db } from 'mongodb';
 import dbClient from '../utils/db';
+import { deleteAllUsersAndFiles } from '../utils/helpers';
 
 describe('dbClient', () => {
-  beforeEach(async () => {
-    await dbClient.users.deleteMany({}).catch(console.error);
-    await dbClient.files.deleteMany({}).catch(console.error);
-  });
+  beforeEach(async () => { await deleteAllUsersAndFiles(); });
 
-  afterEach(async () => {
-    await dbClient.users.deleteMany({});
-    await dbClient.files.deleteMany({});
-  });
+  afterEach(async () => { await deleteAllUsersAndFiles(); });
 
   it('checks the properties of dbClient', () => {
     expect(dbClient.host).to.equal(process.env.DB_HOST || 'localhost');
